@@ -41,6 +41,29 @@ public class ArizaKaydi
     public DateTime? KapanmaZamani { get; set; }
 }
 
+public static class Roller
+{
+    public const string Personel = "Personel";
+    public const string Yonetici = "Yonetici";
+}
+
+public class Kullanici
+{
+    public int Id { get; set; }
+
+    [Required, MaxLength(50)]
+    public string KullaniciAdi { get; set; } = "";
+
+    public byte[] SifreHash { get; set; } = [];
+    public byte[] SifreTuz { get; set; } = [];
+
+    [MaxLength(20)]
+    public string Rol { get; set; } = Roller.Personel;
+}
+
+public record KayitIstegi(string KullaniciAdi, string Sifre);
+public record GirisIstegi(string KullaniciAdi, string Sifre);
+
 public record IstasyonOlustur(string Ad, string Sehir);
 public record ArizaOlustur(int IstasyonId, string Baslik, string? Aciklama, Oncelik Oncelik);
 public record ArizaAta(string Kisi);

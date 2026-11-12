@@ -1,4 +1,4 @@
-﻿# TrackDesk – Arıza Takip API
+# TrackDesk – Arıza Takip API
 
 İstasyon/tesis (gar, havalimanı, trafo merkezi vb.) bazında arıza kayıtlarını yöneten, **C# / .NET 8** ile yazılmış REST API.
 Kurumsal projelerde yaygın kullanılan teknoloji yığınını gösterir: C#, ASP.NET Core, Entity Framework Core, SQL, xUnit.
@@ -8,7 +8,8 @@ Kurumsal projelerde yaygın kullanılan teknoloji yığınını gösterir: C#, A
 - Öncelik (Düşük → Kritik) ve durum filtreli listeleme
 - Durum akışı: `Açık → Atandı → Çözüldü → Kapandı` (atlama/geri dönüş engellenir, 409 döner)
 - Durum bazında özet endpoint'i
-- Swagger arayüzü (`/swagger`)
+- JWT ile kimlik doğrulama, rol bazlı yetki (Personel / Yönetici); şifreler PBKDF2 ile hashlenir
+- Swagger arayüzü (`/swagger`, Bearer token desteği)
 
 ## Mimari
 | Katman | Klasör | Sorumluluk |
@@ -20,10 +21,16 @@ Kurumsal projelerde yaygın kullanılan teknoloji yığınını gösterir: C#, A
 
 ## Çalıştırma
 ```bash
+# Geliştirmede appsettings.Development.json içindeki örnek anahtar kullanılır.
+# Üretimde Jwt__Key ortam değişkeni (en az 32 karakter) zorunludur.
 dotnet run --project src/TrackDesk.Api
-# http://localhost:5000/swagger (port launchSettings'e göre değişir)
 dotnet test
 ```
+
+## Yetkilendirme
+- `POST /auth/kayit` ile ilk kayıt olan kullanıcı **Yönetici**, sonrakiler **Personel** olur.
+- `POST /auth/giris` token döner; istekler `Authorization: Bearer <token>` ile yapılır.
+- Arıza kapatma (`/kapat`) yalnızca Yönetici'ye açıktır, diğer uç noktalar giriş yapmış herkese.
 
 ## Örnek istekler
 ```bash
@@ -37,8 +44,8 @@ GET  /arizalar/ozet
 ```
 
 ## Testler
-xUnit ile 8 test: servis iş kuralları (SQLite in-memory) ve `WebApplicationFactory` ile uçtan uca API akışı.
+xUnit ile 13 test: servis iş kuralları (SQLite in-memory) ve `WebApplicationFactory` ile uçtan uca API akışı (giriş, yetki, rol kontrolü dahil).
 
 ## Sonraki adımlar
-Kimlik doğrulama (JWT), EF Migrations, SQL Server desteği, sayfalama.
+EF Migrations, SQL Server desteği, sayfalama.
 
