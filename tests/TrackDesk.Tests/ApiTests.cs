@@ -3,11 +3,11 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace KamuOps.Tests;
+namespace TrackDesk.Tests;
 
 public class ApiTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
-    private readonly string _dbDosya = Path.Combine(Path.GetTempPath(), $"kamuops-{Guid.NewGuid():N}.db");
+    private readonly string _dbDosya = Path.Combine(Path.GetTempPath(), $"TrackDesk-{Guid.NewGuid():N}.db");
     private readonly HttpClient _client;
 
     public ApiTests(WebApplicationFactory<Program> factory)

@@ -1,7 +1,7 @@
-using KamuOps.Api.Domain;
+using TrackDesk.Api.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace KamuOps.Api.Data;
+namespace TrackDesk.Api.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {

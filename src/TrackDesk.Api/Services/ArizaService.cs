@@ -1,8 +1,8 @@
-using KamuOps.Api.Data;
-using KamuOps.Api.Domain;
+using TrackDesk.Api.Data;
+using TrackDesk.Api.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace KamuOps.Api.Services;
+namespace TrackDesk.Api.Services;
 
 /// <summary>İş kurallarını (durum geçişleri, doğrulama) endpoint'lerden ayrı tutar; test edilebilir.</summary>
 public class ArizaService(AppDbContext db)

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace KamuOps.Api.Domain;
+namespace TrackDesk.Api.Domain;
 
 public enum ArizaDurumu { Acik = 0, Atandi = 1, Cozuldu = 2, Kapandi = 3 }
 

@@ -1,12 +1,12 @@
-using KamuOps.Api.Data;
-using KamuOps.Api.Domain;
-using KamuOps.Api.Services;
+using TrackDesk.Api.Data;
+using TrackDesk.Api.Domain;
+using TrackDesk.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=kamuops.db"));
+    o.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=TrackDesk.db"));
 builder.Services.AddScoped<ArizaService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

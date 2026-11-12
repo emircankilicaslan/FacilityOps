@@ -1,7 +1,7 @@
-# KamuOps – Arıza Takip API
+﻿# TrackDesk – Arıza Takip API
 
 İstasyon/tesis (gar, havalimanı, trafo merkezi vb.) bazında arıza kayıtlarını yöneten, **C# / .NET 8** ile yazılmış REST API.
-Kamu kurumlarında yaygın kullanılan teknoloji yığınını gösterir: C#, ASP.NET Core, Entity Framework Core, SQL, xUnit.
+Kurumsal projelerde yaygın kullanılan teknoloji yığınını gösterir: C#, ASP.NET Core, Entity Framework Core, SQL, xUnit.
 
 ## Özellikler
 - İstasyon ve arıza kaydı yönetimi (CRUD'un ilgili kısımları)
@@ -20,7 +20,7 @@ Kamu kurumlarında yaygın kullanılan teknoloji yığınını gösterir: C#, AS
 
 ## Çalıştırma
 ```bash
-dotnet run --project src/KamuOps.Api
+dotnet run --project src/TrackDesk.Api
 # http://localhost:5000/swagger (port launchSettings'e göre değişir)
 dotnet test
 ```
@@ -41,3 +41,4 @@ xUnit ile 8 test: servis iş kuralları (SQLite in-memory) ve `WebApplicationFac
 
 ## Sonraki adımlar
 Kimlik doğrulama (JWT), EF Migrations, SQL Server desteği, sayfalama.
+

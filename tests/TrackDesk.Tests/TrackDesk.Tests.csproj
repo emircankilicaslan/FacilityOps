@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\KamuOps.Api\KamuOps.Api.csproj" />
+    <ProjectReference Include="..\..\src\TrackDesk.Api\TrackDesk.Api.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,10 +1,10 @@
-using KamuOps.Api.Data;
-using KamuOps.Api.Domain;
-using KamuOps.Api.Services;
+using TrackDesk.Api.Data;
+using TrackDesk.Api.Domain;
+using TrackDesk.Api.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-namespace KamuOps.Tests;
+namespace TrackDesk.Tests;
 
 public class ArizaServiceTests : IDisposable
 {
