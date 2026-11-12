@@ -44,7 +44,7 @@ GET  /arizalar/ozet
 ```
 
 ## Testler
-xUnit ile 13 test: servis iş kuralları (SQLite in-memory) ve `WebApplicationFactory` ile uçtan uca API akışı (giriş, yetki, rol kontrolü dahil).
+xUnit ile 15 test: servis iş kuralları (SQLite in-memory) ve `WebApplicationFactory` ile uçtan uca API akışı (giriş, yetki, rol kontrolü dahil).
 
 ## Sonraki adımlar
 EF Migrations, SQL Server desteği, sayfalama.

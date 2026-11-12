@@ -12,6 +12,13 @@ public class ArizaService(AppDbContext db)
         if (string.IsNullOrWhiteSpace(istek.Baslik))
             throw new ArgumentException("Başlık boş olamaz.");
 
+        if (istek.Baslik.Trim().Length > 200)
+            throw new ArgumentException("Başlık en fazla 200 karakter olabilir.");
+        if (istek.Aciklama?.Length > 2000)
+            throw new ArgumentException("Açıklama en fazla 2000 karakter olabilir.");
+        if (!Enum.IsDefined(istek.Oncelik))
+            throw new ArgumentException("Geçersiz öncelik değeri.");
+
         if (!await db.Istasyonlar.AnyAsync(i => i.Id == istek.IstasyonId))
             throw new KeyNotFoundException("İstasyon bulunamadı.");
 

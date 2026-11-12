@@ -42,6 +42,16 @@ public class ArizaServiceTests : IDisposable
             _svc.OlusturAsync(new ArizaOlustur(1, "  ", null, Oncelik.Normal)));
 
     [Fact]
+    public async Task Olustur_GecersizOncelik_HataFirlatir() =>
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _svc.OlusturAsync(new ArizaOlustur(1, "X", null, (Oncelik)99)));
+
+    [Fact]
+    public async Task Olustur_CokUzunBaslik_HataFirlatir() =>
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _svc.OlusturAsync(new ArizaOlustur(1, new string('a', 201), null, Oncelik.Normal)));
+
+    [Fact]
     public async Task TamAkis_AcikTanKapandiyaGider()
     {
         var a = await _svc.OlusturAsync(new ArizaOlustur(1, "Trafo ısınması", null, Oncelik.Yuksek));
