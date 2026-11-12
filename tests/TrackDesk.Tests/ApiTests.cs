@@ -102,6 +102,85 @@ public class ApiTests : IClassFixture<WebApplicationFactory<Program>>, IDisposab
     }
 
     [Fact]
+    public async Task Gecmis_KullaniciAdiniTokendenAlir()
+    {
+        var c = await GirisliIstemci("mudur");
+        await c.PostAsJsonAsync("/istasyonlar", new { ad = "Ankara Garı", sehir = "Ankara" });
+        await c.PostAsJsonAsync("/arizalar", new { istasyonId = 1, baslik = "Sinyal", oncelik = 2 });
+        await c.PostAsJsonAsync("/arizalar/1/ata", new { kisi = "ayse" });
+
+        var gecmis = await c.GetFromJsonAsync<System.Text.Json.JsonElement>("/arizalar/1/gecmis");
+
+        Assert.Equal(2, gecmis.GetArrayLength());
+        Assert.Equal("mudur", gecmis[1].GetProperty("kullanici").GetString());
+    }
+
+    [Fact]
+    public async Task Liste_SayfalamaVeOzetCalisir()
+    {
+        var c = await GirisliIstemci("mudur");
+        await c.PostAsJsonAsync("/istasyonlar", new { ad = "Ankara Garı", sehir = "Ankara" });
+        for (var i = 0; i < 5; i++)
+            await c.PostAsJsonAsync("/arizalar", new { istasyonId = 1, baslik = $"A{i}", oncelik = 1 });
+
+        var sayfa = await c.GetFromJsonAsync<System.Text.Json.JsonElement>("/arizalar?sayfa=2&boyut=2");
+        Assert.Equal(5, sayfa.GetProperty("toplam").GetInt32());
+        Assert.Equal(3, sayfa.GetProperty("toplamSayfa").GetInt32());
+        Assert.Equal(2, sayfa.GetProperty("ogeler").GetArrayLength());
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.GetAsync("/arizalar?boyut=1000")).StatusCode);
+
+        var ozet = await c.GetFromJsonAsync<System.Text.Json.JsonElement>("/arizalar/ozet");
+        Assert.Equal(5, ozet.GetProperty("durumlar").GetProperty("Acik").GetInt32());
+    }
+
+    [Fact]
+    public async Task CsvDisaAktar_SadeceYonetici()
+    {
+        var yonetici = await GirisliIstemci("mudur");
+        var personel = await GirisliIstemci("teknisyen");
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await personel.GetAsync("/arizalar/disa-aktar")).StatusCode);
+
+        var r = await yonetici.GetAsync("/arizalar/disa-aktar");
+        Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+        Assert.Equal("text/csv", r.Content.Headers.ContentType!.MediaType);
+    }
+
+    [Fact]
+    public async Task Hatalar_ProblemDetailsFormatindaDoner()
+    {
+        var c = await GirisliIstemci("mudur");
+        var r = await c.PostAsync("/arizalar/999/coz", null);
+
+        Assert.Equal("application/problem+json", r.Content.Headers.ContentType!.MediaType);
+        var p = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal(404, p.GetProperty("status").GetInt32());
+    }
+
+    [Fact]
+    public async Task Saglik_AcikUctur_VeGuvenlikBasliklariVardir()
+    {
+        var r = await _factory.CreateClient().GetAsync("/saglik");
+
+        Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+        Assert.Equal("nosniff", r.Headers.GetValues("X-Content-Type-Options").Single());
+        Assert.Equal("DENY", r.Headers.GetValues("X-Frame-Options").Single());
+    }
+
+    [Fact]
+    public async Task GirisDenemeleri_LimiteTakilinca429Doner()
+    {
+        var c = _factory.WithWebHostBuilder(b => b.UseSetting("RateLimit:GirisDakika", "3")).CreateClient();
+        var kodlar = new List<HttpStatusCode>();
+        for (var i = 0; i < 5; i++)
+            kodlar.Add((await c.PostAsJsonAsync("/auth/giris", new { kullaniciAdi = "x", sifre = "yanlis" })).StatusCode);
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, kodlar[^1]);
+        Assert.Equal(3, kodlar.Count(k => k == HttpStatusCode.Unauthorized));
+    }
+
+    [Fact]
     public async Task OlmayanKayit_404Doner()
     {
         var c = await GirisliIstemci("yonetici");

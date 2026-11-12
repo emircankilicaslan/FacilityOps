@@ -38,8 +38,40 @@ public class ArizaKaydi
     public string? AtananKisi { get; set; }
 
     public DateTime OlusturmaZamani { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Önceliğe göre hesaplanan hedef çözüm zamanı (SLA).</summary>
+    public DateTime SlaSonTarih { get; set; }
+
     public DateTime? KapanmaZamani { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public bool Gecikmis => Durum != ArizaDurumu.Kapandi && DateTime.UtcNow > SlaSonTarih;
 }
+
+/// <summary>Bir arıza üzerindeki her işlemin denetim kaydı (kim, ne zaman, hangi durumdan hangisine).</summary>
+public class ArizaGecmisi
+{
+    public int Id { get; set; }
+    public int ArizaId { get; set; }
+
+    [MaxLength(50)]
+    public string Islem { get; set; } = "";
+
+    public ArizaDurumu? EskiDurum { get; set; }
+    public ArizaDurumu YeniDurum { get; set; }
+
+    [MaxLength(100)]
+    public string Kullanici { get; set; } = "";
+
+    public DateTime Zaman { get; set; } = DateTime.UtcNow;
+}
+
+public record Sayfali<T>(int Sayfa, int Boyut, int Toplam, List<T> Ogeler)
+{
+    public int ToplamSayfa => Boyut == 0 ? 0 : (int)Math.Ceiling(Toplam / (double)Boyut);
+}
+
+public record ArizaOzeti(Dictionary<string, int> Durumlar, int Gecikmis);
 
 public static class Roller
 {

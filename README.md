@@ -1,51 +1,63 @@
-# TrackDesk – Arıza Takip API
+# TrackDesk – Arıza / Talep Takip API
 
-İstasyon/tesis (gar, havalimanı, trafo merkezi vb.) bazında arıza kayıtlarını yöneten, **C# / .NET 8** ile yazılmış REST API.
-Kurumsal projelerde yaygın kullanılan teknoloji yığınını gösterir: C#, ASP.NET Core, Entity Framework Core, SQL, xUnit.
+İstasyon ve tesis bazında (gar, havalimanı, trafo merkezi vb.) arıza kayıtlarını yöneten, **C# / .NET 8** ile yazılmış REST API.
+Kurumsal projelerde yaygın kullanılan yığınla geliştirildi: ASP.NET Core, Entity Framework Core (Migrations), SQL, JWT, xUnit, Docker, CI.
 
 ## Özellikler
-- İstasyon ve arıza kaydı yönetimi (CRUD'un ilgili kısımları)
-- Öncelik (Düşük → Kritik) ve durum filtreli listeleme
-- Durum akışı: `Açık → Atandı → Çözüldü → Kapandı` (atlama/geri dönüş engellenir, 409 döner)
-- Durum bazında özet endpoint'i
-- JWT ile kimlik doğrulama, rol bazlı yetki (Personel / Yönetici); şifreler PBKDF2 ile hashlenir
-- Swagger arayüzü (`/swagger`, Bearer token desteği)
+- **Arıza yaşam döngüsü:** `Açık → Atandı → Çözüldü → Kapandı`. Atlama/geri dönüş engellenir (409).
+- **SLA takibi:** Öncelik başına hedef çözüm süresi (Kritik 4 saat, Yüksek 24 saat, Normal 72 saat, Düşük 7 gün); geciken kayıtlar filtrelenir ve özette sayılır.
+- **Denetim kaydı:** Her işlem (kim, ne zaman, hangi durumdan hangisine) `/arizalar/{id}/gecmis` ile izlenebilir; durum değişikliği ve kayıt aynı işlemde yazılır.
+- **Kimlik doğrulama ve yetki:** JWT, rol bazlı (Personel / Yönetici); şifreler PBKDF2 ile hashlenir.
+- **Sayfalama ve filtreleme:** durum, öncelik, gecikme; sayfa boyutu üst sınırlı (100).
+- **CSV dışa aktarma** (yalnızca Yönetici): Excel uyumlu (UTF-8 BOM), CSV/formül enjeksiyonuna karşı kaçışlı.
+- **Dayanıklılık ve güvenlik:** RFC 7807 hata yanıtları, beklenmeyen hatalarda ayrıntı sızdırmama, giriş uçlarında hız sınırı (429), güvenlik başlıkları, `/saglik` sağlık ucu.
+- **Veritabanı:** EF Core Migrations (uygulama açılışında uygulanır), indeksler, kısıtlı yabancı anahtarlar.
+- Swagger arayüzü (`/swagger`, Bearer token desteği).
 
 ## Mimari
 | Katman | Klasör | Sorumluluk |
 |---|---|---|
-| Domain | `Domain/` | Varlıklar, enum'lar, istek modelleri |
-| Data | `Data/` | EF Core `DbContext`, ilişkiler, indeks |
-| Servis | `Services/` | İş kuralları (test edilebilir, HTTP'den bağımsız) |
-| API | `Program.cs` | Minimal API endpoint'leri, hata → HTTP kodu eşleme |
+| Domain | `Domain/` | Varlıklar, enum'lar, istek/yanıt modelleri |
+| Data | `Data/` | EF Core `DbContext`, ilişkiler, indeksler, `Migrations/` |
+| Servis | `Services/` | İş kuralları, denetim, SLA, CSV (HTTP'den bağımsız, test edilebilir) |
+| API | `Program.cs` | Minimal API uç noktaları, kimlik doğrulama, hata ve güvenlik ara katmanları |
 
 ## Çalıştırma
 ```bash
 # Geliştirmede appsettings.Development.json içindeki örnek anahtar kullanılır.
-# Üretimde Jwt__Key ortam değişkeni (en az 32 karakter) zorunludur.
 dotnet run --project src/TrackDesk.Api
 dotnet test
 ```
 
+Docker ile:
+```bash
+docker build -t trackdesk .
+docker run -p 8080:8080 -e Jwt__Key=<en-az-32-karakterlik-gizli-anahtar> -e Jwt__Issuer=TrackDesk -e Jwt__Audience=TrackDesk.Istemci -v trackdesk-data:/data trackdesk
+```
+Üretimde `Jwt__Key` ortam değişkeni zorunludur; yoksa uygulama başlamaz.
+
 ## Yetkilendirme
 - `POST /auth/kayit` ile ilk kayıt olan kullanıcı **Yönetici**, sonrakiler **Personel** olur.
 - `POST /auth/giris` token döner; istekler `Authorization: Bearer <token>` ile yapılır.
-- Arıza kapatma (`/kapat`) yalnızca Yönetici'ye açıktır, diğer uç noktalar giriş yapmış herkese.
+- Arıza kapatma (`/kapat`) ve CSV dışa aktarma yalnızca Yönetici'ye açıktır; diğer uç noktalar giriş yapmış herkese.
 
-## Örnek istekler
-```bash
-POST /istasyonlar        {"ad":"Ankara Garı","sehir":"Ankara"}
-POST /arizalar           {"istasyonId":1,"baslik":"Sinyalizasyon arızası","oncelik":3}
-POST /arizalar/1/ata     {"kisi":"Ayşe"}
-POST /arizalar/1/coz
-POST /arizalar/1/kapat
-GET  /arizalar?durum=0&oncelik=3
-GET  /arizalar/ozet
-```
+## Uç noktalar
+| Yöntem | Yol | Açıklama |
+|---|---|---|
+| POST | `/auth/kayit`, `/auth/giris` | Kayıt, giriş (hız sınırlı) |
+| POST/GET | `/istasyonlar` | İstasyon ekle / listele |
+| POST | `/arizalar` | Arıza aç (SLA hesaplanır) |
+| GET | `/arizalar?durum=&oncelik=&gecikmis=&sayfa=&boyut=` | Sayfalı, filtreli liste |
+| GET | `/arizalar/ozet` | Durum bazında sayılar ve geciken adedi |
+| GET | `/arizalar/{id}/gecmis` | Denetim kaydı |
+| POST | `/arizalar/{id}/ata`, `/coz` | Atama, çözme |
+| POST | `/arizalar/{id}/kapat` | Kapatma (Yönetici) |
+| GET | `/arizalar/disa-aktar` | CSV (Yönetici) |
+| GET | `/saglik` | Sağlık kontrolü |
 
 ## Testler
-xUnit ile 15 test: servis iş kuralları (SQLite in-memory) ve `WebApplicationFactory` ile uçtan uca API akışı (giriş, yetki, rol kontrolü dahil).
+xUnit ile 41 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, denetim kaydı, CSV enjeksiyon koruması ve `WebApplicationFactory` ile uçtan uca API akışı (giriş, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
+GitHub Actions (`.github/workflows/ci.yml`) her push ve pull request'te derleme (uyarılar hata sayılır) ve testleri çalıştırır.
 
 ## Sonraki adımlar
-EF Migrations, SQL Server desteği, sayfalama.
-
+SQL Server/PostgreSQL desteği, token yenileme (refresh token), kullanıcı yönetimi uçları.
