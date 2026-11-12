@@ -14,6 +14,15 @@ Kurumsal projelerde yaygın kullanılan yığınla geliştirildi: ASP.NET Core, 
 - **Veritabanı:** EF Core Migrations (uygulama açılışında uygulanır), indeksler, kısıtlı yabancı anahtarlar.
 - Swagger arayüzü (`/swagger`, Bearer token desteği).
 
+## Ekran görüntüleri
+
+Çalışan API'nin Swagger arayüzü (demo verisiyle). Sağ üstteki **Authorize** düğmesine `/auth/giris` ile alınan token girilir:
+
+![Swagger arayüzü](docs/screenshots/swagger.jpg)
+
+Yetkilendirilmiş bir istek ve yanıtı (güvenlik başlıklarıyla birlikte):
+
+![Özet yanıtı](docs/screenshots/ozet-yaniti.jpg)
 ## Mimari
 | Katman | Klasör | Sorumluluk |
 |---|---|---|
