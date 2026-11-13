@@ -91,10 +91,36 @@ public class Kullanici
 
     [MaxLength(20)]
     public string Rol { get; set; } = Roller.Personel;
+
+    /// <summary>Pasif kullanıcı giriş yapamaz ve token yenileyemez.</summary>
+    public bool Aktif { get; set; } = true;
+}
+
+/// <summary>Yenileme tokenının kendisi saklanmaz, yalnızca SHA-256 özeti tutulur.</summary>
+public class YenilemeTokeni
+{
+    public int Id { get; set; }
+    public int KullaniciId { get; set; }
+    public Kullanici Kullanici { get; set; } = null!;
+
+    [Required, MaxLength(64)]
+    public string TokenOzeti { get; set; } = "";
+
+    public DateTime OlusturmaZamani { get; set; } = DateTime.UtcNow;
+    public DateTime SonKullanma { get; set; }
+
+    /// <summary>Kullanıldığında (döndürme), çıkışta veya şifre değişiminde dolar.</summary>
+    public DateTime? IptalZamani { get; set; }
 }
 
 public record KayitIstegi(string KullaniciAdi, string Sifre);
 public record GirisIstegi(string KullaniciAdi, string Sifre);
+public record YenilemeIstegi(string? YenilemeTokeni);
+public record SifreDegistirIstegi(string? MevcutSifre, string? YeniSifre);
+public record RolDegistirIstegi(string? Rol);
+public record DurumDegistirIstegi(bool Aktif);
+public record KullaniciOzeti(int Id, string KullaniciAdi, string Rol, bool Aktif);
+public record TokenCifti(string Token, string YenilemeTokeni, DateTime TokenSonKullanma);
 
 public record IstasyonOlustur(string Ad, string Sehir);
 public record ArizaOlustur(int IstasyonId, string Baslik, string? Aciklama, Oncelik Oncelik);

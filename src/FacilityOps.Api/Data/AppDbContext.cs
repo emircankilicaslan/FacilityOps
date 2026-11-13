@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ArizaKaydi> Arizalar => Set<ArizaKaydi>();
 
     public DbSet<Kullanici> Kullanicilar => Set<Kullanici>();
+    public DbSet<YenilemeTokeni> YenilemeTokenleri => Set<YenilemeTokeni>();
     public DbSet<ArizaGecmisi> ArizaGecmisleri => Set<ArizaGecmisi>();
 
     protected override void OnModelCreating(ModelBuilder b)
@@ -24,6 +25,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<ArizaGecmisi>().HasIndex(g => g.ArizaId);
         b.Entity<ArizaKaydi>().HasIndex(a => a.SlaSonTarih);
         b.Entity<Kullanici>().HasIndex(k => k.KullaniciAdi).IsUnique();
+        b.Entity<YenilemeTokeni>().HasIndex(t => t.TokenOzeti).IsUnique();
+        b.Entity<YenilemeTokeni>()
+            .HasOne(t => t.Kullanici).WithMany().HasForeignKey(t => t.KullaniciId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<ArizaKaydi>().HasIndex(a => new { a.Durum, a.Oncelik });
     }
 }

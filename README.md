@@ -18,7 +18,7 @@ Kurumsal projelerde yaygın kullanılan yığınla geliştirildi: ASP.NET Core, 
 
 ## Ekran görüntüleri
 
-Çalışan API'nin Swagger arayüzü (demo verisiyle). Sağ üstteki **Authorize** düğmesine `/auth/giris` ile alınan token girilir:
+Çalışan API'nin Swagger arayüzü (demo verisiyle). Sağ üstteki **Authorize** düğmesine `/auth/giris` ile alınan erişim tokenı girilir:
 
 ![Swagger arayüzü](docs/screenshots/swagger.jpg)
 
@@ -51,13 +51,21 @@ docker run -p 8080:8080 -e Jwt__Key=<en-az-32-karakterlik-gizli-anahtar> -e Jwt_
 
 ## Yetkilendirme
 - `POST /auth/kayit` ile ilk kayıt olan kullanıcı **Yönetici**, sonrakiler **Personel** olur.
-- `POST /auth/giris` token döner; istekler `Authorization: Bearer <token>` ile yapılır.
+- `POST /auth/giris` kısa ömürlü bir erişim tokenı (varsayılan 15 dk) ve bir **yenileme tokenı** (varsayılan 7 gün) döner; istekler `Authorization: Bearer <erişim tokenı>` ile yapılır.
+- `POST /auth/yenile` yenileme tokenını **döndürür**: eski token iptal edilir, yeni bir çift verilir. İptal edilmiş bir token tekrar sunulursa çalınmış sayılır ve o kullanıcının tüm oturumları kapatılır.
+- Yenileme tokenının kendisi veritabanında tutulmaz, yalnızca SHA-256 özeti saklanır. Süreler `Jwt__ErisimDakika` ve `Jwt__YenilemeGun` ile ayarlanır.
+- Şifre değişince, kullanıcı pasife alınınca veya rolü değişince o kullanıcının yenileme tokenları iptal edilir. Daha önce verilmiş erişim tokenı en fazla erişim süresi kadar (15 dk) geçerli kalır.
+- Sistemde en az bir aktif Yönetici kalmalıdır; son yönetici pasife alınamaz ya da rolü düşürülemez (409).
 - Arıza kapatma (`/kapat`) ve CSV dışa aktarma yalnızca Yönetici'ye açıktır; diğer uç noktalar giriş yapmış herkese.
 
 ## Uç noktalar
 | Yöntem | Yol | Açıklama |
 |---|---|---|
 | POST | `/auth/kayit`, `/auth/giris` | Kayıt, giriş (hız sınırlı) |
+| POST | `/auth/yenile`, `/auth/cikis` | Yenileme tokenı ile yeni çift al (döndürme) / oturumu kapat (hız sınırlı) |
+| POST | `/auth/sifre-degistir` | Kendi şifreni değiştir; diğer oturumlar kapanır |
+| GET | `/kullanicilar` | Kullanıcı listesi (Yönetici) |
+| PUT | `/kullanicilar/{id}/rol`, `/kullanicilar/{id}/durum` | Rol (Personel/Yonetici) ve aktif/pasif değiştir (Yönetici) |
 | POST/GET | `/istasyonlar` | İstasyon ekle / listele |
 | POST | `/arizalar` | Arıza aç (SLA hesaplanır) |
 | GET | `/arizalar?durum=&oncelik=&gecikmis=&sayfa=&boyut=` | Sayfalı, filtreli liste |
@@ -69,11 +77,11 @@ docker run -p 8080:8080 -e Jwt__Key=<en-az-32-karakterlik-gizli-anahtar> -e Jwt_
 | GET | `/saglik` | Sağlık kontrolü |
 
 ## Testler
-xUnit ile 56 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, denetim kaydı, CSV enjeksiyon koruması ve `WebApplicationFactory` ile uçtan uca API akışı (giriş, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
+xUnit ile 68 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, denetim kaydı, CSV enjeksiyon koruması ve `WebApplicationFactory` ile uçtan uca API akışı (giriş, token yenileme ve tekrar kullanım koruması, şifre değiştirme, kullanıcı yönetimi, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
 GitHub Actions (`.github/workflows/ci.yml`) her push ve pull request'te derleme (uyarılar hata sayılır) ve testleri çalıştırır.
 
 ## Sonraki adımlar
-SQL Server/PostgreSQL desteği, token yenileme (refresh token), kullanıcı yönetimi uçları.
+SQL Server/PostgreSQL desteği, süresi dolmuş yenileme tokenları için arka plan temizliği, erişim tokenının anlık iptali (şu an en fazla 15 dk geçerli kalır).
 
 ## Lisans
 
