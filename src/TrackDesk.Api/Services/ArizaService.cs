@@ -54,6 +54,8 @@ public class ArizaService(AppDbContext db)
     {
         if (string.IsNullOrWhiteSpace(kisi))
             throw new ArgumentException("Atanacak kişi boş olamaz.");
+        if (kisi.Trim().Length > 100)
+            throw new ArgumentException("Atanacak kişi adı en fazla 100 karakter olabilir.");
 
         var ariza = await GetirAsync(id);
         var eski = ariza.Durum;
