@@ -129,11 +129,12 @@ korumali.MapPost("/arizalar", async (ArizaOlustur istek, ArizaService s, ClaimsP
     return Results.Created($"/arizalar/{a.Id}", a);
 });
 
-korumali.MapGet("/arizalar", (ArizaDurumu? durum, Oncelik? oncelik, bool? gecikmis, int? sayfa, int? boyut, ArizaService s) =>
-    s.ListeleAsync(durum, oncelik, gecikmis, sayfa ?? 1, boyut ?? 20));
+korumali.MapGet("/arizalar", (ArizaDurumu? durum, Oncelik? oncelik, bool? gecikmis, int? sayfa, int? boyut, string? atanan, string? ara, ArizaService s) =>
+    s.ListeleAsync(durum, oncelik, gecikmis, sayfa ?? 1, boyut ?? 20, atanan, ara));
 
 korumali.MapGet("/arizalar/ozet", (ArizaService s) => s.OzetAsync());
 korumali.MapGet("/arizalar/{id:int}/gecmis", (int id, ArizaService s) => s.GecmisAsync(id));
+korumali.MapGet("/arizalar/{id:int}", (int id, ArizaService s) => s.DetayAsync(id));
 
 korumali.MapGet("/arizalar/disa-aktar", async (ArizaDurumu? durum, Oncelik? oncelik, bool? gecikmis, ArizaService s) =>
         Results.File(await s.CsvAsync(durum, oncelik, gecikmis), "text/csv; charset=utf-8", "arizalar.csv"))
