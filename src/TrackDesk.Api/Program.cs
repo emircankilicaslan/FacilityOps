@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -62,6 +63,19 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// Ters vekil (nginx/ingress) arkasında gerçek istemci IP'si için. Varsayılan kapalı: başlık istemci tarafından sahtelenebileceğinden
+// yalnızca uygulamanın doğrudan erişilemediği (sadece vekilin eriştiği) dağıtımlarda açılmalıdır.
+if (app.Configuration.GetValue("Proxy:GuvenilirBaslik", false))
+{
+    var vekil = new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    };
+    vekil.KnownNetworks.Clear();
+    vekil.KnownProxies.Clear();
+    app.UseForwardedHeaders(vekil);
+}
 
 using (var scope = app.Services.CreateScope())
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
