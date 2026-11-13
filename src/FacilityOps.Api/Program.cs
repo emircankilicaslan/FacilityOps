@@ -18,6 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(o =>
 builder.Services.AddScoped<ArizaService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<KullaniciService>();
+builder.Services.AddHostedService<YenilemeTokeniTemizlikServisi>();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("veritabani");
 
 var jwtAnahtar = builder.Configuration["Jwt:Key"];

@@ -84,6 +84,7 @@ docker run -p 8080:8080 -e Jwt__Key=<en-az-32-karakterlik-gizli-anahtar> -e Jwt_
 - `POST /auth/giris` kısa ömürlü bir erişim tokenı (varsayılan 15 dk) ve bir **yenileme tokenı** (varsayılan 7 gün) döner; istekler `Authorization: Bearer <erişim tokenı>` ile yapılır.
 - `POST /auth/yenile` yenileme tokenını **döndürür**: eski token iptal edilir, yeni bir çift verilir. İptal edilmiş bir token tekrar sunulursa çalınmış sayılır ve o kullanıcının tüm oturumları kapatılır.
 - Yenileme tokenının kendisi veritabanında tutulmaz, yalnızca SHA-256 özeti saklanır. Süreler `Jwt__ErisimDakika` ve `Jwt__YenilemeGun` ile ayarlanır.
+- Süresi dolmuş yenileme tokenı kayıtları arka planda düzenli silinir (`Jwt__TemizlikDakika`, varsayılan 60; 0 kapatır; `Jwt__TemizlikSaklamaSaat`, varsayılan 24). İptal edilmiş ama süresi dolmamış kayıtlar bilerek tutulur: tekrar kullanım (çalınma) tespiti bunlara dayanır.
 - Şifre değişince, kullanıcı pasife alınınca veya rolü değişince o kullanıcının yenileme tokenları iptal edilir. Daha önce verilmiş erişim tokenı en fazla erişim süresi kadar (15 dk) geçerli kalır.
 - Sistemde en az bir aktif Yönetici kalmalıdır; son yönetici pasife alınamaz ya da rolü düşürülemez (409).
 - Arıza kapatma (`/kapat`) ve CSV dışa aktarma yalnızca Yönetici'ye açıktır; diğer uç noktalar giriş yapmış herkese.
@@ -107,11 +108,11 @@ docker run -p 8080:8080 -e Jwt__Key=<en-az-32-karakterlik-gizli-anahtar> -e Jwt_
 | GET | `/saglik` | Sağlık kontrolü |
 
 ## Testler
-xUnit ile 75 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, denetim kaydı, CSV enjeksiyon koruması ve `WebApplicationFactory` ile uçtan uca API akışı (arayüz sunumu ve içerik güvenlik politikası, giriş, token yenileme ve tekrar kullanım koruması, şifre değiştirme, kullanıcı yönetimi, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
+xUnit ile 79 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, denetim kaydı, CSV enjeksiyon koruması ve `WebApplicationFactory` ile uçtan uca API akışı (arayüz sunumu ve içerik güvenlik politikası, giriş, token yenileme ve tekrar kullanım koruması, şifre değiştirme, kullanıcı yönetimi, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
 GitHub Actions (`.github/workflows/ci.yml`) her push ve pull request'te derleme (uyarılar hata sayılır) ve testleri çalıştırır.
 
 ## Sonraki adımlar
-SQL Server/PostgreSQL desteği, süresi dolmuş yenileme tokenları için arka plan temizliği, erişim tokenının anlık iptali (şu an en fazla 15 dk geçerli kalır).
+SQL Server/PostgreSQL desteği, erişim tokenının anlık iptali (şu an en fazla 15 dk geçerli kalır).
 
 ## Lisans
 
