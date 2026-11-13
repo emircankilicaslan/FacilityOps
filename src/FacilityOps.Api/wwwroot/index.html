@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FacilityOps · Arıza Takip</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <!-- Giriş / kayıt -->
+  <main id="giris-gorunum" class="giris" hidden>
+    <form id="giris-form" class="kart giris-kart" autocomplete="on">
+      <h1>FacilityOps</h1>
+      <p class="soluk">Tesis arıza ve talep takibi</p>
+      <div class="sekmeler" role="tablist">
+        <button type="button" class="sekme aktif" data-mod="giris" role="tab">Giriş</button>
+        <button type="button" class="sekme" data-mod="kayit" role="tab">Kayıt ol</button>
+      </div>
+      <label>Kullanıcı adı
+        <input name="kullaniciAdi" autocomplete="username" required minlength="3" maxlength="50">
+      </label>
+      <label>Şifre
+        <input name="sifre" type="password" autocomplete="current-password" required minlength="8">
+      </label>
+      <p class="ipucu soluk" id="kayit-ipucu" hidden>İlk kayıt olan kullanıcı Yönetici olur, sonrakiler Personel.</p>
+      <p class="hata" id="giris-hata" role="alert" hidden></p>
+      <button class="birincil" type="submit" id="giris-gonder">Giriş yap</button>
+    </form>
+  </main>
+
+  <!-- Uygulama -->
+  <div id="uygulama" hidden>
+    <header class="ust">
+      <strong class="marka">FacilityOps</strong>
+      <nav id="menu" aria-label="Ana menü">
+        <button data-sayfa="arizalar" class="aktif">Arızalar</button>
+        <button data-sayfa="istasyonlar">İstasyonlar</button>
+        <button data-sayfa="kullanicilar" data-yonetici hidden>Kullanıcılar</button>
+      </nav>
+      <div class="ust-sag">
+        <span id="kullanici-etiket" class="soluk"></span>
+        <button id="sifre-ac" class="ikincil kucuk">Şifre</button>
+        <button id="cikis" class="ikincil kucuk">Çıkış</button>
+      </div>
+    </header>
+
+    <main class="icerik">
+      <p class="hata" id="genel-hata" role="alert" hidden></p>
+
+      <!-- Arızalar -->
+      <section id="sayfa-arizalar">
+        <div class="ozet" id="ozet"></div>
+        <div class="arac-cubugu">
+          <input id="f-ara" type="search" placeholder="Başlık / açıklama ara…" aria-label="Ara">
+          <select id="f-durum" aria-label="Durum">
+            <option value="">Tüm durumlar</option>
+            <option value="Acik">Açık</option><option value="Atandi">Atandı</option>
+            <option value="Cozuldu">Çözüldü</option><option value="Kapandi">Kapandı</option>
+          </select>
+          <select id="f-oncelik" aria-label="Öncelik">
+            <option value="">Tüm öncelikler</option>
+            <option value="Kritik">Kritik</option><option value="Yuksek">Yüksek</option>
+            <option value="Normal">Normal</option><option value="Dusuk">Düşük</option>
+          </select>
+          <label class="onay"><input id="f-gecikmis" type="checkbox"> Yalnız geciken</label>
+          <span class="bosluk"></span>
+          <button id="csv-indir" class="ikincil" data-yonetici hidden>CSV indir</button>
+          <button id="yeni-ariza" class="birincil">+ Yeni arıza</button>
+        </div>
+        <div class="kart tablo-kap">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Başlık</th><th>İstasyon</th><th>Öncelik</th><th>Durum</th><th>Atanan</th><th>SLA</th>
+            </tr></thead>
+            <tbody id="ariza-govde"></tbody>
+          </table>
+          <p id="ariza-bos" class="bos soluk" hidden>Kayıt bulunamadı.</p>
+        </div>
+        <div class="sayfalama">
+          <button id="onceki" class="ikincil kucuk">‹ Önceki</button>
+          <span id="sayfa-bilgi" class="soluk"></span>
+          <button id="sonraki" class="ikincil kucuk">Sonraki ›</button>
+        </div>
+      </section>
+
+      <!-- İstasyonlar -->
+      <section id="sayfa-istasyonlar" hidden>
+        <form id="istasyon-form" class="kart satir-form">
+          <label>Ad <input name="ad" required maxlength="100"></label>
+          <label>Şehir <input name="sehir" required maxlength="50"></label>
+          <button class="birincil" type="submit">İstasyon ekle</button>
+        </form>
+        <div class="kart tablo-kap">
+          <table><thead><tr><th>#</th><th>Ad</th><th>Şehir</th></tr></thead><tbody id="istasyon-govde"></tbody></table>
+        </div>
+      </section>
+
+      <!-- Kullanıcılar -->
+      <section id="sayfa-kullanicilar" hidden>
+        <div class="kart tablo-kap">
+          <table>
+            <thead><tr><th>#</th><th>Kullanıcı</th><th>Rol</th><th>Durum</th><th></th></tr></thead>
+            <tbody id="kullanici-govde"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Yeni arıza -->
+  <dialog id="yeni-dialog">
+    <form method="dialog" id="yeni-form" class="dialog-form">
+      <h2>Yeni arıza</h2>
+      <label>İstasyon <select name="istasyonId" id="yeni-istasyon" required></select></label>
+      <label>Başlık <input name="baslik" required maxlength="200"></label>
+      <label>Açıklama <textarea name="aciklama" rows="4" maxlength="2000"></textarea></label>
+      <label>Öncelik
+        <select name="oncelik">
+          <option value="0">Düşük</option><option value="1" selected>Normal</option>
+          <option value="2">Yüksek</option><option value="3">Kritik</option>
+        </select>
+      </label>
+      <p class="hata" id="yeni-hata" role="alert" hidden></p>
+      <div class="dialog-alt">
+        <button type="button" class="ikincil" data-kapat>Vazgeç</button>
+        <button type="submit" class="birincil">Oluştur</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Detay -->
+  <dialog id="detay-dialog">
+    <div class="dialog-form" id="detay-icerik"></div>
+  </dialog>
+
+  <!-- Şifre -->
+  <dialog id="sifre-dialog">
+    <form method="dialog" id="sifre-form" class="dialog-form">
+      <h2>Şifre değiştir</h2>
+      <label>Mevcut şifre <input name="mevcutSifre" type="password" autocomplete="current-password" required></label>
+      <label>Yeni şifre <input name="yeniSifre" type="password" autocomplete="new-password" required minlength="8"></label>
+      <p class="soluk">Değişiklikten sonra diğer oturumların kapanır, yeniden giriş yapman gerekir.</p>
+      <p class="hata" id="sifre-hata" role="alert" hidden></p>
+      <div class="dialog-alt">
+        <button type="button" class="ikincil" data-kapat>Vazgeç</button>
+        <button type="submit" class="birincil">Değiştir</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

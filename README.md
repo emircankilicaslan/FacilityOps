@@ -16,6 +16,22 @@ Kurumsal projelerde yaygın kullanılan yığınla geliştirildi: ASP.NET Core, 
 - **Veritabanı:** EF Core Migrations (uygulama açılışında uygulanır), indeksler, kısıtlı yabancı anahtarlar.
 - Swagger arayüzü (`/swagger`, Bearer token desteği).
 
+## Web arayüzü
+API çalışırken kök adres (`/`) bir web arayüzü sunar; ayrı bir derleme adımı yoktur, dosyalar `src/FacilityOps.Api/wwwroot` altındadır (sade HTML, CSS ve JavaScript).
+
+- Giriş ve kayıt; erişim tokenı süresi dolunca yenileme tokenı ile otomatik ve sessiz yenileme
+- Durum kartları (tıklayınca filtreler), arama, durum / öncelik / geciken filtresi, sayfalama
+- Arıza açma, detay, atama, çözme, kapatma (Yönetici) ve işlem geçmişi
+- İstasyon ekleme, CSV dışa aktarma (Yönetici)
+- Kullanıcı yönetimi (Yönetici): rol değiştirme, pasife alma
+- Şifre değiştirme, koyu tema desteği, mobilde yatay kaydırmalı tablo
+
+Güvenlik: Metinler `textContent` ile yazılır (`innerHTML` yok), sayfa `Content-Security-Policy` ile sunulur ve satır içi betik/stil kullanmaz. Tokenlar `sessionStorage`'da tutulur ve sekme kapanınca silinir.
+
+![Arıza listesi](docs/screenshots/arayuz-liste.jpg)
+
+![Arıza detayı ve işlem geçmişi](docs/screenshots/arayuz-detay.jpg)
+
 ## Ekran görüntüleri
 
 Çalışan API'nin Swagger arayüzü (demo verisiyle). Sağ üstteki **Authorize** düğmesine `/auth/giris` ile alınan erişim tokenı girilir:
@@ -32,6 +48,7 @@ Yetkilendirilmiş bir istek ve yanıtı (güvenlik başlıklarıyla birlikte):
 | Data | `Data/` | EF Core `DbContext`, ilişkiler, indeksler, `Migrations/` |
 | Servis | `Services/` | İş kuralları, denetim, SLA, CSV (HTTP'den bağımsız, test edilebilir) |
 | API | `Program.cs` | Minimal API uç noktaları, kimlik doğrulama, hata ve güvenlik ara katmanları |
+| Arayüz | `wwwroot/` | Bağımlılıksız web arayüzü (HTML, CSS, JS), API ile aynı kökten sunulur |
 
 ## Çalıştırma
 ```bash
@@ -77,7 +94,7 @@ docker run -p 8080:8080 -e Jwt__Key=<en-az-32-karakterlik-gizli-anahtar> -e Jwt_
 | GET | `/saglik` | Sağlık kontrolü |
 
 ## Testler
-xUnit ile 68 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, denetim kaydı, CSV enjeksiyon koruması ve `WebApplicationFactory` ile uçtan uca API akışı (giriş, token yenileme ve tekrar kullanım koruması, şifre değiştirme, kullanıcı yönetimi, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
+xUnit ile 75 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, denetim kaydı, CSV enjeksiyon koruması ve `WebApplicationFactory` ile uçtan uca API akışı (arayüz sunumu ve içerik güvenlik politikası, giriş, token yenileme ve tekrar kullanım koruması, şifre değiştirme, kullanıcı yönetimi, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
 GitHub Actions (`.github/workflows/ci.yml`) her push ve pull request'te derleme (uyarılar hata sayılır) ve testleri çalıştırır.
 
 ## Sonraki adımlar

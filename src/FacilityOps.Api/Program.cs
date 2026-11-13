@@ -87,6 +87,10 @@ app.Use(async (ctx, next) =>
     ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
     ctx.Response.Headers["X-Frame-Options"] = "DENY";
     ctx.Response.Headers["Referrer-Policy"] = "no-referrer";
+    // Arayüz yalnızca kendi kaynaklarını yükler. Swagger UI satır içi betik kullandığı için kapsam dışı.
+    if (!ctx.Request.Path.StartsWithSegments("/swagger"))
+        ctx.Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
     await next();
 });
 
@@ -105,6 +109,8 @@ app.Use(async (ctx, next) =>
     }
 });
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseAuthentication();
