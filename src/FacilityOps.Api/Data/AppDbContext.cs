@@ -1,7 +1,7 @@
-using TrackDesk.Api.Domain;
+using FacilityOps.Api.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace TrackDesk.Api.Data;
+namespace FacilityOps.Api.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {

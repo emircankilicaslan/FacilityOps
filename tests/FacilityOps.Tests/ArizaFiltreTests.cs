@@ -1,10 +1,10 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using TrackDesk.Api.Data;
-using TrackDesk.Api.Domain;
-using TrackDesk.Api.Services;
+using FacilityOps.Api.Data;
+using FacilityOps.Api.Domain;
+using FacilityOps.Api.Services;
 
-namespace TrackDesk.Tests;
+namespace FacilityOps.Tests;
 
 public class ArizaFiltreTests : IDisposable
 {
