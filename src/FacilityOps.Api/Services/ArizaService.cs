@@ -1,9 +1,9 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using TrackDesk.Api.Data;
-using TrackDesk.Api.Domain;
+using FacilityOps.Api.Data;
+using FacilityOps.Api.Domain;
 
-namespace TrackDesk.Api.Services;
+namespace FacilityOps.Api.Services;
 
 /// <summary>İş kurallarını (durum geçişleri, doğrulama, denetim kaydı) endpoint'lerden ayrı tutar; test edilebilir.</summary>
 public class ArizaService(AppDbContext db)
@@ -162,8 +162,8 @@ public class ArizaService(AppDbContext db)
                 ? sorgu.Where(a => a.Durum != ArizaDurumu.Kapandi && a.SlaSonTarih < simdi)
                 : sorgu.Where(a => a.Durum == ArizaDurumu.Kapandi || a.SlaSonTarih >= simdi);
         }
-        if (!string.IsNullOrWhiteSpace(atanan)) sorgu = sorgu.Where(a => a.AtananKisi != null && a.AtananKisi.ToLower() == atanan.Trim().ToLower());
-        if (!string.IsNullOrWhiteSpace(ara)) sorgu = sorgu.Where(a => a.Baslik.ToLower().Contains(ara.Trim().ToLower()));
+        if (!string.IsNullOrWhiteSpace(atanan)) sorgu = sorgu.Where(a => a.AtananKisi != null && a.AtananKisi.ToLower() == atanan.Trim().ToLowerInvariant());
+        if (!string.IsNullOrWhiteSpace(ara)) sorgu = sorgu.Where(a => a.Baslik.ToLower().Contains(ara.Trim().ToLowerInvariant()));
         return sorgu;
     }
 

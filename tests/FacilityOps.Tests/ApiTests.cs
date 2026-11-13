@@ -4,11 +4,11 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace TrackDesk.Tests;
+namespace FacilityOps.Tests;
 
 public class ApiTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
-    private readonly string _dbDosya = Path.Combine(Path.GetTempPath(), $"trackdesk-{Guid.NewGuid():N}.db");
+    private readonly string _dbDosya = Path.Combine(Path.GetTempPath(), $"facilityops-{Guid.NewGuid():N}.db");
     private readonly WebApplicationFactory<Program> _factory;
 
     public ApiTests(WebApplicationFactory<Program> factory)

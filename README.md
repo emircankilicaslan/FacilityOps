@@ -1,4 +1,4 @@
-# FacilityOps – Arıza / Talep Takip API
+﻿# FacilityOps – Arıza / Talep Takip API
 
 İstasyon ve tesis bazında (gar, havalimanı, trafo merkezi vb.) arıza kayıtlarını yöneten, **C# / .NET 8** ile yazılmış REST API.
 Kurumsal projelerde yaygın kullanılan yığınla geliştirildi: ASP.NET Core, Entity Framework Core (Migrations), SQL, JWT, xUnit, Docker, CI.
@@ -34,14 +34,14 @@ Yetkilendirilmiş bir istek ve yanıtı (güvenlik başlıklarıyla birlikte):
 ## Çalıştırma
 ```bash
 # Geliştirmede appsettings.Development.json içindeki örnek anahtar kullanılır.
-dotnet run --project src/TrackDesk.Api
+dotnet run --project src/FacilityOps.Api
 dotnet test
 ```
 
 Docker ile:
 ```bash
-docker build -t trackdesk .
-docker run -p 8080:8080 -e Jwt__Key=<en-az-32-karakterlik-gizli-anahtar> -e Jwt__Issuer=TrackDesk -e Jwt__Audience=TrackDesk.Istemci -v trackdesk-data:/data trackdesk
+docker build -t facilityops .
+docker run -p 8080:8080 -e Jwt__Key=<en-az-32-karakterlik-gizli-anahtar> -e Jwt__Issuer=FacilityOps -e Jwt__Audience=FacilityOps.Istemci -v facilityops-data:/data facilityops
 ```
 Üretimde `Jwt__Key` ortam değişkeni zorunludur; yoksa uygulama başlamaz.
 
@@ -67,7 +67,7 @@ docker run -p 8080:8080 -e Jwt__Key=<en-az-32-karakterlik-gizli-anahtar> -e Jwt_
 | GET | `/saglik` | Sağlık kontrolü |
 
 ## Testler
-xUnit ile 41 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, denetim kaydı, CSV enjeksiyon koruması ve `WebApplicationFactory` ile uçtan uca API akışı (giriş, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
+xUnit ile 56 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, denetim kaydı, CSV enjeksiyon koruması ve `WebApplicationFactory` ile uçtan uca API akışı (giriş, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
 GitHub Actions (`.github/workflows/ci.yml`) her push ve pull request'te derleme (uyarılar hata sayılır) ve testleri çalıştırır.
 
 ## Sonraki adımlar

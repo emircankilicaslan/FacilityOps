@@ -4,10 +4,10 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using TrackDesk.Api.Data;
-using TrackDesk.Api.Domain;
+using FacilityOps.Api.Data;
+using FacilityOps.Api.Domain;
 
-namespace TrackDesk.Api.Services;
+namespace FacilityOps.Api.Services;
 
 public class AuthService(AppDbContext db, IConfiguration config)
 {

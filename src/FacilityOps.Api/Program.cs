@@ -7,14 +7,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using TrackDesk.Api.Data;
-using TrackDesk.Api.Domain;
-using TrackDesk.Api.Services;
+using FacilityOps.Api.Data;
+using FacilityOps.Api.Domain;
+using FacilityOps.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=trackdesk.db"));
+    o.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=facilityops.db"));
 builder.Services.AddScoped<ArizaService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("veritabani");

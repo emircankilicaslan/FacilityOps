@@ -3,11 +3,11 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace TrackDesk.Tests;
+namespace FacilityOps.Tests;
 
 public class ProxyHizSiniriApiTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
-    private readonly string _dbDosya = Path.Combine(Path.GetTempPath(), $"trackdesk-{Guid.NewGuid():N}.db");
+    private readonly string _dbDosya = Path.Combine(Path.GetTempPath(), $"facilityops-{Guid.NewGuid():N}.db");
     private readonly WebApplicationFactory<Program> _factory;
 
     public ProxyHizSiniriApiTests(WebApplicationFactory<Program> factory)

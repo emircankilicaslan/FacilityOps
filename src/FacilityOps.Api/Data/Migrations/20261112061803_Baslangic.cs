@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace TrackDesk.Api.Data.Migrations
+namespace FacilityOps.Api.Data.Migrations
 {
     /// <inheritdoc />
     public partial class Baslangic : Migration

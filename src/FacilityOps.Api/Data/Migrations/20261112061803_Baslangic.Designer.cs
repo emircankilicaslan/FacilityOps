@@ -2,22 +2,25 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using TrackDesk.Api.Data;
+using FacilityOps.Api.Data;
 
 #nullable disable
 
-namespace TrackDesk.Api.Data.Migrations
+namespace FacilityOps.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261112061803_Baslangic")]
+    partial class Baslangic
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.11");
 
-            modelBuilder.Entity("TrackDesk.Api.Domain.ArizaGecmisi", b =>
+            modelBuilder.Entity("FacilityOps.Api.Domain.ArizaGecmisi", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -52,7 +55,7 @@ namespace TrackDesk.Api.Data.Migrations
                     b.ToTable("ArizaGecmisleri");
                 });
 
-            modelBuilder.Entity("TrackDesk.Api.Domain.ArizaKaydi", b =>
+            modelBuilder.Entity("FacilityOps.Api.Domain.ArizaKaydi", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -100,7 +103,7 @@ namespace TrackDesk.Api.Data.Migrations
                     b.ToTable("Arizalar");
                 });
 
-            modelBuilder.Entity("TrackDesk.Api.Domain.Istasyon", b =>
+            modelBuilder.Entity("FacilityOps.Api.Domain.Istasyon", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -121,7 +124,7 @@ namespace TrackDesk.Api.Data.Migrations
                     b.ToTable("Istasyonlar");
                 });
 
-            modelBuilder.Entity("TrackDesk.Api.Domain.Kullanici", b =>
+            modelBuilder.Entity("FacilityOps.Api.Domain.Kullanici", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -153,18 +156,18 @@ namespace TrackDesk.Api.Data.Migrations
                     b.ToTable("Kullanicilar");
                 });
 
-            modelBuilder.Entity("TrackDesk.Api.Domain.ArizaGecmisi", b =>
+            modelBuilder.Entity("FacilityOps.Api.Domain.ArizaGecmisi", b =>
                 {
-                    b.HasOne("TrackDesk.Api.Domain.ArizaKaydi", null)
+                    b.HasOne("FacilityOps.Api.Domain.ArizaKaydi", null)
                         .WithMany()
                         .HasForeignKey("ArizaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("TrackDesk.Api.Domain.ArizaKaydi", b =>
+            modelBuilder.Entity("FacilityOps.Api.Domain.ArizaKaydi", b =>
                 {
-                    b.HasOne("TrackDesk.Api.Domain.Istasyon", "Istasyon")
+                    b.HasOne("FacilityOps.Api.Domain.Istasyon", "Istasyon")
                         .WithMany("Arizalar")
                         .HasForeignKey("IstasyonId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -173,7 +176,7 @@ namespace TrackDesk.Api.Data.Migrations
                     b.Navigation("Istasyon");
                 });
 
-            modelBuilder.Entity("TrackDesk.Api.Domain.Istasyon", b =>
+            modelBuilder.Entity("FacilityOps.Api.Domain.Istasyon", b =>
                 {
                     b.Navigation("Arizalar");
                 });
