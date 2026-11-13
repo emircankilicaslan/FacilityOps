@@ -17,6 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(o =>
     o.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=facilityops.db"));
 builder.Services.AddScoped<ArizaService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<KullaniciService>();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("veritabani");
 
 var jwtAnahtar = builder.Configuration["Jwt:Key"];
@@ -118,10 +119,32 @@ app.MapPost("/auth/kayit", async (KayitIstegi istek, AuthService s) =>
     return Results.Created($"/auth/kayit/{k.Id}", new { k.Id, k.KullaniciAdi, k.Rol });
 }).RequireRateLimiting("giris");
 
-app.MapPost("/auth/giris", async (GirisIstegi istek, AuthService s) => new { token = await s.GirisAsync(istek) })
+static object TokenYaniti(TokenCifti c) => new { token = c.Token, yenilemeTokeni = c.YenilemeTokeni, sonKullanma = c.TokenSonKullanma };
+
+app.MapPost("/auth/giris", async (GirisIstegi istek, AuthService s) => TokenYaniti(await s.GirisAsync(istek)))
     .RequireRateLimiting("giris");
 
+app.MapPost("/auth/yenile", async (YenilemeIstegi istek, AuthService s) => TokenYaniti(await s.YenileAsync(istek.YenilemeTokeni)))
+    .RequireRateLimiting("giris");
+
+app.MapPost("/auth/cikis", async (YenilemeIstegi istek, AuthService s) =>
+{
+    await s.CikisAsync(istek.YenilemeTokeni);
+    return Results.NoContent();
+}).RequireRateLimiting("giris");
+
 var korumali = app.MapGroup("").RequireAuthorization();
+
+korumali.MapPost("/auth/sifre-degistir", async (SifreDegistirIstegi istek, AuthService s, ClaimsPrincipal u) =>
+{
+    await s.SifreDegistirAsync(KullaniciId(u), istek.MevcutSifre, istek.YeniSifre);
+    return Results.NoContent();
+});
+
+var yonetim = korumali.MapGroup("/kullanicilar").RequireAuthorization("YoneticiPolitikasi");
+yonetim.MapGet("", (KullaniciService s) => s.ListeleAsync());
+yonetim.MapPut("/{id:int}/rol", (int id, RolDegistirIstegi istek, KullaniciService s) => s.RolDegistirAsync(id, istek.Rol));
+yonetim.MapPut("/{id:int}/durum", (int id, DurumDegistirIstegi istek, KullaniciService s) => s.DurumDegistirAsync(id, istek.Aktif));
 
 korumali.MapPost("/istasyonlar", async (IstasyonOlustur istek, AppDbContext db) =>
 {
@@ -163,6 +186,11 @@ korumali.MapPost("/arizalar/{id:int}/kapat", (int id, ArizaService s, ClaimsPrin
     .RequireAuthorization("YoneticiPolitikasi");
 
 app.Run();
+
+static int KullaniciId(ClaimsPrincipal u) =>
+    int.TryParse(u.FindFirstValue(ClaimTypes.NameIdentifier), out var id)
+        ? id
+        : throw new UnauthorizedAccessException("Kullanıcı kimliği okunamadı.");
 
 static Task Hata(HttpContext ctx, int kod, string baslik, string detay)
 {
