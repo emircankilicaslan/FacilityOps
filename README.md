@@ -17,20 +17,33 @@ Kurumsal projelerde yaygın kullanılan yığınla geliştirildi: ASP.NET Core, 
 - Swagger arayüzü (`/swagger`, Bearer token desteği).
 
 ## Web arayüzü
-API çalışırken kök adres (`/`) bir web arayüzü sunar; ayrı bir derleme adımı yoktur, dosyalar `src/FacilityOps.Api/wwwroot` altındadır (sade HTML, CSS ve JavaScript).
+API çalışırken kök adres (`/`) bir operasyon paneli sunar. Ek bir derleme adımı yoktur; dosyalar `src/FacilityOps.Api/wwwroot` altındadır (sade HTML, CSS ve JavaScript, harici bağımlılık yok).
 
-- Giriş ve kayıt; erişim tokenı süresi dolunca yenileme tokenı ile otomatik ve sessiz yenileme
-- Durum kartları (tıklayınca filtreler), arama, durum / öncelik / geciken filtresi, sayfalama
-- Arıza açma, detay, atama, çözme, kapatma (Yönetici) ve işlem geçmişi
-- İstasyon ekleme, CSV dışa aktarma (Yönetici)
-- Kullanıcı yönetimi (Yönetici): rol değiştirme, pasife alma
-- Şifre değiştirme, koyu tema desteği, mobilde yatay kaydırmalı tablo
+![Genel bakış](docs/screenshots/arayuz-genel-bakis.jpg)
 
-Güvenlik: Metinler `textContent` ile yazılır (`innerHTML` yok), sayfa `Content-Security-Policy` ile sunulur ve satır içi betik/stil kullanmaz. Tokenlar `sessionStorage`'da tutulur ve sekme kapanınca silinir.
+- **Genel bakış:** durum kartları (tıklayınca ilgili listeyi açar), durum dağılımı halka grafiği, SLA süresi aşılan kayıtlar ve önceliğe göre dağılım
+- **SLA göstergesi:** her açık arızada kalan süre ve doluluk çubuğu; süre dolmadan önce (%75 sonrası) turuncu, dolunca kırmızı ve "x sa gecikti"
+- **Arıza listesi:** arama, durum / öncelik / geciken filtresi, sayfalama; yönetici için CSV dışa aktarma
+- **Detay çekmecesi:** SLA kartı, atama ve yeniden atama, çözüldü olarak işaretleme, kapatma (yönetici) ve zaman çizelgesi biçiminde işlem geçmişi
+- **İstasyonlar, kullanıcılar (yönetici):** rol değiştirme, pasife alma; şifre değiştirme
+- Oturum süresi dolunca yenileme tokenı ile sessizce yenilenir; mobilde ve koyu temada kullanılabilir
 
-![Arıza listesi](docs/screenshots/arayuz-liste.jpg)
+![Arıza listesi ve SLA göstergeleri](docs/screenshots/arayuz-liste.jpg)
 
-![Arıza detayı ve işlem geçmişi](docs/screenshots/arayuz-detay.jpg)
+| Detay çekmecesi | Yeni arıza |
+|---|---|
+| ![Detay](docs/screenshots/arayuz-detay.jpg) | ![Yeni arıza](docs/screenshots/arayuz-yeni-ariza.jpg) |
+
+| Giriş | Kullanıcı yönetimi | Mobil |
+|---|---|---|
+| ![Giriş](docs/screenshots/arayuz-giris.jpg) | ![Kullanıcılar](docs/screenshots/arayuz-kullanicilar.jpg) | <img src="docs/screenshots/arayuz-mobil.jpg" width="200" alt="Mobil görünüm"> |
+
+Güvenlik: metinler `textContent` ile yazılır (`innerHTML` yok), sayfa `Content-Security-Policy` ile sunulur ve satır içi betik/stil kullanmaz. Tokenlar `sessionStorage`'da tutulur ve sekme kapanınca silinir.
+
+**Denemek için:** boş bir veritabanıyla uygulamayı başlatın ve demo verisini yükleyin (Node 18+). Betik 4 kullanıcı (ilk kayıt olan `yonetici` Yönetici olur), 6 istasyon ve farklı durumlarda 14 arıza oluşturur; ortak demo şifresi betiğin başında yazar, yalnızca yerel denemede kullanın:
+```bash
+node scripts/demo-verisi.mjs http://localhost:8080
+```
 
 ## Ekran görüntüleri
 
