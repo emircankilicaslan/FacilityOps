@@ -1,4 +1,4 @@
-# TrackDesk – Arıza / Talep Takip API
+# FacilityOps – Arıza / Talep Takip API
 
 İstasyon ve tesis bazında (gar, havalimanı, trafo merkezi vb.) arıza kayıtlarını yöneten, **C# / .NET 8** ile yazılmış REST API.
 Kurumsal projelerde yaygın kullanılan yığınla geliştirildi: ASP.NET Core, Entity Framework Core (Migrations), SQL, JWT, xUnit, Docker, CI.
