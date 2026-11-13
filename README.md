@@ -1,5 +1,7 @@
 ﻿# FacilityOps – Arıza / Talep Takip API
 
+![CI](https://github.com/emircankilicaslan/FacilityOps/actions/workflows/ci.yml/badge.svg) ![Lisans: MIT](https://img.shields.io/badge/Lisans-MIT-green.svg)
+
 İstasyon ve tesis bazında (gar, havalimanı, trafo merkezi vb.) arıza kayıtlarını yöneten, **C# / .NET 8** ile yazılmış REST API.
 Kurumsal projelerde yaygın kullanılan yığınla geliştirildi: ASP.NET Core, Entity Framework Core (Migrations), SQL, JWT, xUnit, Docker, CI.
 
@@ -72,3 +74,7 @@ GitHub Actions (`.github/workflows/ci.yml`) her push ve pull request'te derleme 
 
 ## Sonraki adımlar
 SQL Server/PostgreSQL desteği, token yenileme (refresh token), kullanıcı yönetimi uçları.
+
+## Lisans
+
+Bu proje [MIT Lisansı](LICENSE) ile paylaşılmaktadır.
