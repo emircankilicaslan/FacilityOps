@@ -87,14 +87,16 @@ public class ArizaService(AppDbContext db)
         return ariza;
     }
 
+    public async Task<ArizaKaydi> DetayAsync(int id) => await db.Arizalar.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id) ?? throw new KeyNotFoundException("Arıza kaydı bulunamadı.");
+    
     public async Task<Sayfali<ArizaKaydi>> ListeleAsync(
-        ArizaDurumu? durum, Oncelik? oncelik, bool? gecikmis, int sayfa = 1, int boyut = 20)
+        ArizaDurumu? durum, Oncelik? oncelik, bool? gecikmis, int sayfa = 1, int boyut = 20, string? atanan = null, string? ara = null)
     {
         if (sayfa < 1) throw new ArgumentException("Sayfa 1 veya daha büyük olmalı.");
         if (boyut < 1 || boyut > MaksSayfaBoyutu)
             throw new ArgumentException($"Sayfa boyutu 1 ile {MaksSayfaBoyutu} arasında olmalı.");
 
-        var sorgu = Filtrele(durum, oncelik, gecikmis);
+        var sorgu = Filtrele(durum, oncelik, gecikmis, atanan, ara);
         var toplam = await sorgu.CountAsync();
         var ogeler = await sorgu
             .OrderByDescending(a => a.Oncelik).ThenBy(a => a.OlusturmaZamani).ThenBy(a => a.Id)
@@ -148,7 +150,7 @@ public class ArizaService(AppDbContext db)
             : deger;
     }
 
-    private IQueryable<ArizaKaydi> Filtrele(ArizaDurumu? durum, Oncelik? oncelik, bool? gecikmis)
+    private IQueryable<ArizaKaydi> Filtrele(ArizaDurumu? durum, Oncelik? oncelik, bool? gecikmis, string? atanan = null, string? ara = null)
     {
         var sorgu = db.Arizalar.AsNoTracking().AsQueryable();
         if (durum is not null) sorgu = sorgu.Where(a => a.Durum == durum);
@@ -160,6 +162,8 @@ public class ArizaService(AppDbContext db)
                 ? sorgu.Where(a => a.Durum != ArizaDurumu.Kapandi && a.SlaSonTarih < simdi)
                 : sorgu.Where(a => a.Durum == ArizaDurumu.Kapandi || a.SlaSonTarih >= simdi);
         }
+        if (!string.IsNullOrWhiteSpace(atanan)) sorgu = sorgu.Where(a => a.AtananKisi != null && a.AtananKisi.ToLower() == atanan.Trim().ToLower());
+        if (!string.IsNullOrWhiteSpace(ara)) sorgu = sorgu.Where(a => a.Baslik.ToLower().Contains(ara.Trim().ToLower()));
         return sorgu;
     }
 
