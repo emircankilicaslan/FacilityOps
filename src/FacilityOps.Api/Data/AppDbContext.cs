@@ -3,8 +3,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FacilityOps.Api.Data;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext : DbContext
 {
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+    /// <summary>Türetilmiş bağlamlar (ör. <see cref="SqlServerDbContext"/>) kendi türlü seçeneklerini geçirir.</summary>
+    protected AppDbContext(DbContextOptions options) : base(options) { }
+
     public DbSet<Istasyon> Istasyonlar => Set<Istasyon>();
     public DbSet<ArizaKaydi> Arizalar => Set<ArizaKaydi>();
 

@@ -1,22 +1,40 @@
 # Tek komutla çalıştırma:  docker compose up --build
 # Arayüz ve Swagger: http://localhost:8080  ·  http://localhost:8080/swagger
-# JWT_KEY yoksa aşağıdaki yerel deneme anahtarı kullanılır; gerçek ortamda .env ile en az 32 karakterlik gizli bir değer verin.
+# Veritabanı SQL Server'dır; migration'lar uygulama açılırken otomatik uygulanır.
+# JWT_KEY ve SA_PASSWORD yoksa aşağıdaki yerel deneme değerleri kullanılır; gerçek ortamda .env ile verin
+# (JWT_KEY en az 32 karakter; SA_PASSWORD SQL Server karmaşıklık kurallarını sağlamalı).
 services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:-Yerel-Deneme-Parola-1!}
+    volumes:
+      - facilityops-sql:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
   api:
     build: .
+    depends_on:
+      sql:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
+      Database__Provider: SqlServer
+      ConnectionStrings__Default: "Server=sql,1433;Database=FacilityOps;User Id=sa;Password=${SA_PASSWORD:-Yerel-Deneme-Parola-1!};TrustServerCertificate=True"
       Jwt__Key: ${JWT_KEY:-yerel-deneme-anahtari-gercek-ortamda-degistirin-0123456789}
       Jwt__Issuer: FacilityOps
       Jwt__Audience: FacilityOps.Istemci
-    volumes:
-      - facilityops-data:/data
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /saglik HTTP/1.0\r\n\r\n\" >&3 && grep -q \" 200 \" <&3'"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /saglik HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q \" 200 \" <&3'"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
 volumes:
-  facilityops-data:
+  facilityops-sql:
