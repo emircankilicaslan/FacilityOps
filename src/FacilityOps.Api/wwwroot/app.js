@@ -95,6 +95,7 @@ const IKONLAR = {
   ariza: () => ikon("M12 9v4", "M12 17h.01", "M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"),
   istasyon: () => ikon("M3 21h18", "M5 21V8l7-5 7 5v13", "M9 21v-6h6v6"),
   kullanici: () => ikon("M16 20v-1a4 4 0 00-4-4H8a4 4 0 00-4 4v1", "M10 11a4 4 0 100-8 4 4 0 000 8", "M20 20v-1a4 4 0 00-3-3.9", "M15 3.2a4 4 0 010 7.6"),
+  denetim: () => ikon("M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2", "M9 3h6v4H9z", "M9 12h6", "M9 16h4"),
 };
 const bosIkon = () => ikon("M4 4h16v16H4z", "M4 9h16", "M9 9v11");
 
@@ -169,6 +170,7 @@ const durum = {
   sayfa: "ozet",
   acik: 0,
   liste: { sayfa: 1, boyut: 12, toplamSayfa: 1, filtre: { ara: "", durum: "", oncelik: "", gecikmis: false } },
+  denetim: { sayfa: 1, boyut: 15, toplamSayfa: 1, filtre: { kullanici: "", islem: "" } },
 };
 const yonetici = () => durum.ben.rol === "Yonetici";
 const istasyonAdi = (id) => durum.istasyonlar.find((i) => i.id === id)?.ad ?? `#${id}`;
@@ -240,8 +242,9 @@ const SAYFALAR = [
   { id: "arizalar", ad: "Arızalar", ikon: "ariza", gorunur: () => true },
   { id: "istasyonlar", ad: "İstasyonlar", ikon: "istasyon", gorunur: () => true },
   { id: "kullanicilar", ad: "Kullanıcılar", ikon: "kullanici", gorunur: yonetici },
+  { id: "denetim", ad: "Denetim kaydı", ikon: "denetim", gorunur: yonetici },
 ];
-const YUKLEYICILER = { ozet: ozetSayfasi, arizalar: arizalarSayfasi, istasyonlar: istasyonlarSayfasi, kullanicilar: kullanicilarSayfasi };
+const YUKLEYICILER = { ozet: ozetSayfasi, arizalar: arizalarSayfasi, istasyonlar: istasyonlarSayfasi, kullanicilar: kullanicilarSayfasi, denetim: denetimSayfasi };
 
 function menuyuCiz() {
   $("#menu").replaceChildren(...SAYFALAR.filter((s) => s.gorunur()).map((s) =>
@@ -428,6 +431,7 @@ async function arizalarSayfasi() {
   const L = durum.liste, f = L.filtre;
   $("#sayfa-alt").textContent = "Öncelik ve SLA sırasına göre listelenir";
   doldur($("#ust-eylem"),
+    yonetici() ? h("button", { class: "dugme ikincil", onclick: () => dosyaIndir(`/arizalar/disa-aktar.xlsx?${sorgu({ ...durum.liste.filtre, ara: "" })}`, "arizalar.xlsx", "Excel dosyası indirildi.") }, "Excel indir") : null,
     yonetici() ? h("button", { class: "dugme ikincil", onclick: csvIndir }, "CSV indir") : null,
     h("button", { class: "dugme birincil", onclick: yeniArizaDialogu }, "+ Yeni arıza"));
 
@@ -473,16 +477,19 @@ async function tabloYukle() {
   } catch (e) { if (e.durum !== 401) hataGoster(e); }
 }
 
-async function csvIndir() {
+/** Yetkili isteği (Bearer) ile dosyayı indirir. */
+async function dosyaIndir(yol, dosyaAdi, mesaj) {
   try {
-    const r = await api(`/arizalar/disa-aktar?${sorgu({ ...durum.liste.filtre, ara: "" })}`, { ham: true });
+    const r = await api(yol, { ham: true });
     const url = URL.createObjectURL(await r.blob());
-    const a = h("a", { href: url, download: "arizalar.csv" });
+    const a = h("a", { href: url, download: dosyaAdi });
     document.body.append(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
-    duyur("basari", "CSV dosyası indirildi.");
+    duyur("basari", mesaj);
   } catch (e) { hataGoster(e); }
 }
+
+const csvIndir = () => dosyaIndir(`/arizalar/disa-aktar?${sorgu({ ...durum.liste.filtre, ara: "" })}`, "arizalar.csv", "CSV dosyası indirildi.");
 
 function yeniArizaDialogu() {
   if (!durum.istasyonlar.length) {
@@ -607,6 +614,63 @@ async function kullanicilarSayfasi() {
         h("td", {}, rozet(k.aktif ? "aktif-rozet" : "pasif-rozet", k.aktif ? "Aktif" : "Pasif")),
         h("td", {}, h("div", { class: "eylemler" }, h("button", { class: k.aktif ? "dugme tehlike kucuk" : "dugme ikincil kucuk", onclick: () => degistir(`/kullanicilar/${k.id}/durum`, { aktif: !k.aktif }) }, k.aktif ? "Pasife al" : "Aktifleştir"))));
     }))))));
+}
+
+// ---------------------------------------------------------------------------
+// Denetim kaydı (yönetici)
+// ---------------------------------------------------------------------------
+
+const DENETIM_ISLEM_AD = {
+  Giris: "Giriş", GirisBasarisiz: "Başarısız giriş", KullaniciKaydi: "Kullanıcı kaydı", SifreDegisti: "Şifre değişti",
+  TokenTekrarKullanimi: "Token tekrar kullanımı", RolDegisti: "Rol değişti", KullaniciPasifeAlindi: "Kullanıcı pasife alındı",
+  KullaniciAktiflestirildi: "Kullanıcı aktifleştirildi", IstasyonOlusturuldu: "İstasyon oluşturuldu",
+};
+
+function denetimSorgu(f) {
+  const p = new URLSearchParams();
+  if (f.kullanici) p.set("kullanici", f.kullanici);
+  if (f.islem) p.set("islem", f.islem);
+  return p;
+}
+
+async function denetimSayfasi() {
+  const D = durum.denetim, f = D.filtre;
+  $("#sayfa-alt").textContent = "Kim, ne zaman, ne yaptı. Arıza işlemleri arıza detayındaki işlem geçmişinde de görünür.";
+  doldur($("#ust-eylem"), h("button", { class: "dugme ikincil", onclick: () => dosyaIndir(`/denetim/disa-aktar.xlsx?${denetimSorgu(f)}`, "denetim-kaydi.xlsx", "Excel dosyası indirildi.") }, "Excel indir"));
+
+  const kullanici = h("input", { id: "d-kullanici", type: "search", placeholder: "Kullanıcı adı…", "aria-label": "Kullanıcı", value: f.kullanici });
+  let zamanla;
+  kullanici.addEventListener("input", () => { clearTimeout(zamanla); zamanla = setTimeout(() => { f.kullanici = kullanici.value.trim(); D.sayfa = 1; denetimYukle(); }, 300); });
+  const islem = h("select", { id: "d-islem", "aria-label": "İşlem" },
+    h("option", { value: "" }, "Tüm işlemler"),
+    ...Object.entries(DENETIM_ISLEM_AD).map(([k, v]) => h("option", { value: k, selected: k === f.islem }, v)));
+  islem.addEventListener("change", (e) => { f.islem = e.target.value; D.sayfa = 1; denetimYukle(); });
+
+  $("#icerik").replaceChildren(h("div", { class: "arac-cubugu" }, kullanici, islem), h("section", { class: "kart", id: "denetim-kart" }));
+  await denetimYukle();
+}
+
+async function denetimYukle() {
+  const D = durum.denetim;
+  try {
+    const p = denetimSorgu(D.filtre);
+    p.set("sayfa", D.sayfa);
+    p.set("boyut", D.boyut);
+    const veri = await api(`/denetim?${p}`);
+    D.toplamSayfa = Math.max(1, veri.toplamSayfa ?? Math.ceil(veri.toplam / D.boyut));
+    const tablo = veri.ogeler.length
+      ? h("div", { class: "tablo-kap" }, h("table", {},
+          h("thead", {}, h("tr", {}, ["Zaman", "Kullanıcı", "İşlem", "Kayıt", "Ayrıntı"].map((b) => h("th", {}, b)))),
+          h("tbody", {}, veri.ogeler.map((d) => h("tr", {},
+            h("td", {}, yerel(d.zaman)),
+            h("td", {}, h("div", { class: "kisi" }, h("span", { class: "avatar" }, bas(d.kullanici)), d.kullanici,
+              d.rol ? rozet(d.rol === "Yonetici" ? "rol-yonetici" : "rol-personel", d.rol === "Yonetici" ? "Yönetici" : "Personel") : null)),
+            h("td", {}, DENETIM_ISLEM_AD[d.islem] ?? d.islem),
+            h("td", {}, d.varlikTuru ? h("code", {}, `${d.varlikTuru} ${d.varlikId ?? ""}`.trim()) : h("span", { class: "soluk" }, "–")),
+            h("td", { class: "soluk kucuk-yazi" }, d.ayrinti ?? "–"))))))
+      : bosDurum("Kayıt bulunamadı", "Filtreleri değiştirmeyi deneyin.");
+    doldur($("#denetim-kart"), tablo, veri.ogeler.length || D.sayfa > 1 ? sayfalama(D.sayfa, D.toplamSayfa, veri.toplam, (s) => { D.sayfa = s; denetimYukle(); }) : null);
+  } catch (e) { if (e.durum !== 401) hataGoster(e); }
 }
 
 // ---------------------------------------------------------------------------

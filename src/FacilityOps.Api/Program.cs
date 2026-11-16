@@ -18,6 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(o =>
 builder.Services.AddScoped<ArizaService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<KullaniciService>();
+builder.Services.AddScoped<DenetimService>();
 builder.Services.AddHostedService<YenilemeTokeniTemizlikServisi>();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("veritabani");
 
@@ -150,10 +151,19 @@ korumali.MapPost("/auth/sifre-degistir", async (SifreDegistirIstegi istek, AuthS
 
 var yonetim = korumali.MapGroup("/kullanicilar").RequireAuthorization("YoneticiPolitikasi");
 yonetim.MapGet("", (KullaniciService s) => s.ListeleAsync());
-yonetim.MapPut("/{id:int}/rol", (int id, RolDegistirIstegi istek, KullaniciService s) => s.RolDegistirAsync(id, istek.Rol));
-yonetim.MapPut("/{id:int}/durum", (int id, DurumDegistirIstegi istek, KullaniciService s) => s.DurumDegistirAsync(id, istek.Aktif));
+yonetim.MapPut("/{id:int}/rol", (int id, RolDegistirIstegi istek, KullaniciService s, ClaimsPrincipal u) =>
+    s.RolDegistirAsync(id, istek.Rol, u.Identity?.Name ?? ""));
+yonetim.MapPut("/{id:int}/durum", (int id, DurumDegistirIstegi istek, KullaniciService s, ClaimsPrincipal u) =>
+    s.DurumDegistirAsync(id, istek.Aktif, u.Identity?.Name ?? ""));
 
-korumali.MapPost("/istasyonlar", async (IstasyonOlustur istek, AppDbContext db) =>
+// Denetim kaydı (kim, ne zaman, ne yaptı): yalnızca Yönetici.
+var denetim = korumali.MapGroup("/denetim").RequireAuthorization("YoneticiPolitikasi");
+denetim.MapGet("", (string? kullanici, string? islem, DateTime? baslangic, DateTime? bitis, int? sayfa, int? boyut, DenetimService s) =>
+    s.ListeleAsync(kullanici, islem, baslangic, bitis, sayfa ?? 1, boyut ?? 25));
+denetim.MapGet("/disa-aktar.xlsx", async (string? kullanici, string? islem, DateTime? baslangic, DateTime? bitis, DenetimService s) =>
+    Results.File(await s.XlsxAsync(kullanici, islem, baslangic, bitis), Xlsx.ContentType, "denetim-kaydi.xlsx"));
+
+korumali.MapPost("/istasyonlar", async (IstasyonOlustur istek, AppDbContext db, ClaimsPrincipal u) =>
 {
     if (string.IsNullOrWhiteSpace(istek.Ad) || string.IsNullOrWhiteSpace(istek.Sehir))
         throw new ArgumentException("Ad ve şehir zorunludur.");
@@ -161,6 +171,7 @@ korumali.MapPost("/istasyonlar", async (IstasyonOlustur istek, AppDbContext db) 
         throw new ArgumentException("Ad en fazla 100, şehir en fazla 50 karakter olabilir.");
     var i = new Istasyon { Ad = istek.Ad.Trim(), Sehir = istek.Sehir.Trim() };
     db.Istasyonlar.Add(i);
+    Denetim.Ekle(db, u.Identity?.Name, u.FindFirstValue(ClaimTypes.Role), "IstasyonOlusturuldu", "Istasyon", null, $"{i.Ad} · {i.Sehir}");
     await db.SaveChangesAsync();
     return Results.Created($"/istasyonlar/{i.Id}", i);
 });
@@ -182,6 +193,10 @@ korumali.MapGet("/arizalar/{id:int}", (int id, ArizaService s) => s.DetayAsync(i
 
 korumali.MapGet("/arizalar/disa-aktar", async (ArizaDurumu? durum, Oncelik? oncelik, bool? gecikmis, ArizaService s) =>
         Results.File(await s.CsvAsync(durum, oncelik, gecikmis), "text/csv; charset=utf-8", "arizalar.csv"))
+    .RequireAuthorization("YoneticiPolitikasi");
+
+korumali.MapGet("/arizalar/disa-aktar.xlsx", async (ArizaDurumu? durum, Oncelik? oncelik, bool? gecikmis, ArizaService s) =>
+        Results.File(await s.XlsxAsync(durum, oncelik, gecikmis), Xlsx.ContentType, "arizalar.xlsx"))
     .RequireAuthorization("YoneticiPolitikasi");
 
 korumali.MapPost("/arizalar/{id:int}/ata", (int id, ArizaAta istek, ArizaService s, ClaimsPrincipal u) =>

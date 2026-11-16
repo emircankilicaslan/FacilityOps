@@ -13,7 +13,7 @@ public class KullaniciService(AppDbContext db, AuthService auth)
             .Select(k => new KullaniciOzeti(k.Id, k.KullaniciAdi, k.Rol, k.Aktif))
             .ToListAsync();
 
-    public async Task<KullaniciOzeti> RolDegistirAsync(int id, string? rol)
+    public async Task<KullaniciOzeti> RolDegistirAsync(int id, string? rol, string islemYapan = "")
     {
         if (rol is not (Roller.Personel or Roller.Yonetici))
             throw new ArgumentException($"Rol '{Roller.Personel}' veya '{Roller.Yonetici}' olmalı.");
@@ -22,20 +22,23 @@ public class KullaniciService(AppDbContext db, AuthService auth)
         if (k.Rol == Roller.Yonetici && rol != Roller.Yonetici)
             await SonYoneticiDegilseAsync(k);
 
+        var eskiRol = k.Rol;
         k.Rol = rol;
+        Denetim.Ekle(db, islemYapan, Roller.Yonetici, "RolDegisti", "Kullanici", k.Id, $"{k.KullaniciAdi}: {eskiRol} → {rol}");
         await db.SaveChangesAsync();
         // Eski rolle verilmiş token en fazla erişim süresi kadar geçerli kalır; yenileme tokenları kapatılır.
         await auth.TumOturumlariKapatAsync(k.Id);
         return Ozet(k);
     }
 
-    public async Task<KullaniciOzeti> DurumDegistirAsync(int id, bool aktif)
+    public async Task<KullaniciOzeti> DurumDegistirAsync(int id, bool aktif, string islemYapan = "")
     {
         var k = await Bul(id);
         if (!aktif && k.Aktif && k.Rol == Roller.Yonetici)
             await SonYoneticiDegilseAsync(k);
 
         k.Aktif = aktif;
+        Denetim.Ekle(db, islemYapan, Roller.Yonetici, aktif ? "KullaniciAktiflestirildi" : "KullaniciPasifeAlindi", "Kullanici", k.Id, k.KullaniciAdi);
         await db.SaveChangesAsync();
         if (!aktif) await auth.TumOturumlariKapatAsync(k.Id);
         return Ozet(k);

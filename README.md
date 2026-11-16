@@ -8,10 +8,11 @@ Kurumsal projelerde yaygın kullanılan yığınla geliştirildi: ASP.NET Core, 
 ## Özellikler
 - **Arıza yaşam döngüsü:** `Açık → Atandı → Çözüldü → Kapandı`. Atlama/geri dönüş engellenir (409).
 - **SLA takibi:** Öncelik başına hedef çözüm süresi (Kritik 4 saat, Yüksek 24 saat, Normal 72 saat, Düşük 7 gün); geciken kayıtlar filtrelenir ve özette sayılır.
-- **Denetim kaydı:** Her işlem (kim, ne zaman, hangi durumdan hangisine) `/arizalar/{id}/gecmis` ile izlenebilir; durum değişikliği ve kayıt aynı işlemde yazılır.
+- **Arıza işlem geçmişi:** Her arıza işlemi (kim, ne zaman, hangi durumdan hangisine) `/arizalar/{id}/gecmis` ile izlenebilir; durum değişikliği ve kayıt aynı işlemde yazılır.
+- **Genel denetim kaydı (audit log):** Giriş ve başarısız giriş, kullanıcı kaydı, şifre değişimi, rol/durum değişikliği, istasyon ekleme ve yenileme tokenı tekrar kullanımı (güvenlik olayı) `DenetimKayitlari` tablosuna yazılır; yalnızca Yönetici `/denetim` ile sorgular (kullanıcı, işlem, tarih süzgeci, sayfalama). Kayıt, asıl değişiklikle aynı işlemde (atomik) yazılır; parola ve token kayda girmez.
 - **Kimlik doğrulama ve yetki:** JWT, rol bazlı (Personel / Yönetici); şifreler PBKDF2 ile hashlenir.
 - **Sayfalama ve filtreleme:** durum, öncelik, gecikme; sayfa boyutu üst sınırlı (100).
-- **CSV dışa aktarma** (yalnızca Yönetici): Excel uyumlu (UTF-8 BOM), CSV/formül enjeksiyonuna karşı kaçışlı.
+- **Dışa aktarma** (yalnızca Yönetici): arızalar CSV (Excel uyumlu, UTF-8 BOM, formül enjeksiyonuna karşı kaçışlı) ve **Excel (.xlsx)**; denetim kaydı Excel. Excel'de metin hücreleri her zaman düz metin yazılır, `=…` ile başlayan girdi formül olarak çalışmaz.
 - **Dayanıklılık ve güvenlik:** RFC 7807 hata yanıtları, beklenmeyen hatalarda ayrıntı sızdırmama, giriş uçlarında hız sınırı (429), güvenlik başlıkları, `/saglik` sağlık ucu.
 - **Veritabanı:** EF Core Migrations (uygulama açılışında uygulanır), indeksler, kısıtlı yabancı anahtarlar.
 - Swagger arayüzü (`/swagger`, Bearer token desteği).
@@ -26,6 +27,9 @@ API çalışırken kök adres (`/`) bir operasyon paneli sunar. Ek bir derleme a
 - **Arıza listesi:** arama, durum / öncelik / geciken filtresi, sayfalama; yönetici için CSV dışa aktarma
 - **Detay çekmecesi:** SLA kartı, atama ve yeniden atama, çözüldü olarak işaretleme, kapatma (yönetici) ve zaman çizelgesi biçiminde işlem geçmişi
 - **İstasyonlar, kullanıcılar (yönetici):** rol değiştirme, pasife alma; şifre değiştirme
+- **Denetim kaydı (yönetici):** kullanıcı ve işlem süzgeci, sayfalama, Excel indirme; arıza listesinde Excel ve CSV indirme
+
+![Denetim kaydı](docs/screenshots/arayuz-denetim-kaydi.jpg)
 - Oturum süresi dolunca yenileme tokenı ile sessizce yenilenir; mobilde ve koyu temada kullanılabilir
 
 ![Arıza listesi ve SLA göstergeleri](docs/screenshots/arayuz-liste.jpg)
@@ -63,7 +67,71 @@ Yetkilendirilmiş bir istek ve yanıtı (güvenlik başlıklarıyla birlikte):
 | API | `Program.cs` | Minimal API uç noktaları, kimlik doğrulama, hata ve güvenlik ara katmanları |
 | Arayüz | `wwwroot/` | Bağımlılıksız web arayüzü (HTML, CSS, JS), API ile aynı kökten sunulur |
 
+## Veritabanı şeması
+
+```mermaid
+erDiagram
+    Istasyonlar ||--o{ Arizalar : "arızaları (silme: Restrict)"
+    Arizalar ||--o{ ArizaGecmisleri : "işlem geçmişi (silme: Cascade)"
+    Kullanicilar ||--o{ YenilemeTokenleri : "oturumları (silme: Cascade)"
+    Istasyonlar {
+        int Id PK
+        nvarchar100 Ad
+        nvarchar50 Sehir
+    }
+    Arizalar {
+        int Id PK
+        int IstasyonId FK
+        nvarchar200 Baslik
+        int Oncelik "Düşük, Normal, Yüksek, Kritik"
+        int Durum "Açık, Atandı, Çözüldü, Kapandı"
+        nvarchar100 AtananKisi
+        datetime SlaSonTarih "önceliğe göre hesaplanır"
+    }
+    ArizaGecmisleri {
+        int Id PK
+        int ArizaId FK
+        nvarchar50 Islem
+        int EskiDurum
+        int YeniDurum
+        nvarchar100 Kullanici
+        datetime Zaman
+    }
+    Kullanicilar {
+        int Id PK
+        nvarchar50 KullaniciAdi UK
+        blob SifreHash "PBKDF2"
+        nvarchar20 Rol "Personel, Yonetici"
+        bool Aktif
+    }
+    YenilemeTokenleri {
+        int Id PK
+        int KullaniciId FK
+        nvarchar64 TokenOzeti UK "yalnızca SHA-256 özeti"
+        datetime SonKullanma
+        datetime IptalZamani
+    }
+    DenetimKayitlari {
+        int Id PK
+        datetime Zaman
+        nvarchar50 Kullanici
+        nvarchar40 Islem
+        nvarchar20 VarlikTuru
+        nvarchar40 VarlikId
+        nvarchar500 Ayrinti
+    }
+```
+
+`DenetimKayitlari`, `Kullanicilar` ile yabancı anahtarla bağlı değildir: kullanıcı adı kayıt anında metin olarak yazılır (başarısız girişte var olmayan bir ad da yazılabilir, kullanıcı pasife alınsa bile geçmiş anlamını korur). Şema `Data/Migrations/` altındaki EF Core migration'larından üretilir; veritabanı SQLite'tır.
+
 ## Çalıştırma
+
+Docker ile tek komut (arayüz ve Swagger: http://localhost:8080):
+```bash
+docker compose up --build
+```
+`JWT_KEY` verilmezse `docker-compose.yml` içindeki yerel deneme anahtarı kullanılır; gerçek ortamda en az 32 karakterlik gizli bir değer verin. Veri `facilityops-data` biriminde kalıcıdır (`docker compose down -v` siler).
+
 ```bash
 # Geliştirmede appsettings.Development.json içindeki örnek anahtar kullanılır.
 dotnet run --project src/FacilityOps.Api
@@ -104,15 +172,19 @@ docker run -p 8080:8080 -e Jwt__Key=<en-az-32-karakterlik-gizli-anahtar> -e Jwt_
 | GET | `/arizalar/{id}/gecmis` | Denetim kaydı |
 | POST | `/arizalar/{id}/ata`, `/coz` | Atama, çözme |
 | POST | `/arizalar/{id}/kapat` | Kapatma (Yönetici) |
-| GET | `/arizalar/disa-aktar` | CSV (Yönetici) |
+| GET | `/arizalar/disa-aktar`, `/arizalar/disa-aktar.xlsx` | CSV / Excel (Yönetici) |
+| GET | `/denetim?kullanici=&islem=&baslangic=&bitis=&sayfa=&boyut=` | Genel denetim kaydı (Yönetici) |
+| GET | `/denetim/disa-aktar.xlsx` | Denetim kaydı Excel (Yönetici) |
 | GET | `/saglik` | Sağlık kontrolü |
 
 ## Testler
-xUnit ile 79 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, denetim kaydı, CSV enjeksiyon koruması ve `WebApplicationFactory` ile uçtan uca API akışı (arayüz sunumu ve içerik güvenlik politikası, giriş, token yenileme ve tekrar kullanım koruması, şifre değiştirme, kullanıcı yönetimi, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
+xUnit ile 93 test: iş kuralları ve SLA (SQLite in-memory), sayfalama, arıza işlem geçmişi, genel denetim kaydı (giriş ve başarısız giriş, rol/durum/şifre/istasyon işlemleri, token tekrar kullanımı, parola ve token'ın kayda girmemesi, yalnızca Yönetici erişimi, süzgeç ve sayfalama), CSV ve Excel çıktısı (formül enjeksiyonu koruması) ve `WebApplicationFactory` ile uçtan uca API akışı (arayüz sunumu ve içerik güvenlik politikası, giriş, token yenileme ve tekrar kullanım koruması, şifre değiştirme, kullanıcı yönetimi, rol kontrolü, hız sınırı, hata biçimi, güvenlik başlıkları).
 GitHub Actions (`.github/workflows/ci.yml`) her push ve pull request'te derleme (uyarılar hata sayılır) ve testleri çalıştırır.
 
 ## Sonraki adımlar
-SQL Server/PostgreSQL desteği, erişim tokenının anlık iptali (şu an en fazla 15 dk geçerli kalır).
+SQL Server/PostgreSQL desteği (veritabanı şu an SQLite; üretimde sunucu tabanlı bir veritabanı gerekir), erişim tokenının anlık iptali (şu an en fazla 15 dk geçerli kalır).
+
+**Denetim kaydının sınırları:** Tablo uygulama tarafında yalnızca eklenir, ancak veritabanı düzeyinde güncelleme/silme engellenmemiştir; saklama/arşivleme politikası yoktur. Arıza oluşturma/atama/çözme/kapatma işlemleri genel denetim kaydında değil, arıza işlem geçmişindedir; okuma istekleri kayda alınmaz.
 
 ## Lisans
 
