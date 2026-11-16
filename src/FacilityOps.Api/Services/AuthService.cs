@@ -35,6 +35,7 @@ public class AuthService(AppDbContext db, IConfiguration config)
         kullanici.SifreHash = Hashle(istek.Sifre, out var tuz);
         kullanici.SifreTuz = tuz;
         db.Kullanicilar.Add(kullanici);
+        Denetim.Ekle(db, kullanici.KullaniciAdi, kullanici.Rol, "KullaniciKaydi", "Kullanici", null, $"rol: {kullanici.Rol}");
         await db.SaveChangesAsync();
         return kullanici;
     }
@@ -44,8 +45,14 @@ public class AuthService(AppDbContext db, IConfiguration config)
         var ad = (istek.KullaniciAdi ?? "").Trim().ToLowerInvariant();
         var k = await db.Kullanicilar.FirstOrDefaultAsync(x => x.KullaniciAdi == ad);
         if (k is null || !k.Aktif || !SifreDogru(istek.Sifre ?? "", k))
+        {
+            // Şifre kayda girmez; yalnızca denenen kullanıcı adı yazılır.
+            Denetim.Ekle(db, ad, null, "GirisBasarisiz", "Kullanici", k?.Id);
+            await db.SaveChangesAsync();
             throw new UnauthorizedAccessException("Kullanıcı adı veya şifre hatalı.");
-        return await CiftUretAsync(k);
+        }
+        Denetim.Ekle(db, k.KullaniciAdi, k.Rol, "Giris", "Kullanici", k.Id);
+        return await CiftUretAsync(k); // denetim kaydı token kaydıyla aynı SaveChanges'ta yazılır
     }
 
     /// <summary>
@@ -63,6 +70,8 @@ public class AuthService(AppDbContext db, IConfiguration config)
 
         if (t.IptalZamani is not null)
         {
+            Denetim.Ekle(db, t.Kullanici.KullaniciAdi, t.Kullanici.Rol, "TokenTekrarKullanimi", "Kullanici", t.KullaniciId,
+                "İptal edilmiş yenileme tokenı tekrar sunuldu; tüm oturumlar kapatıldı");
             await TumOturumlariKapatAsync(t.KullaniciId);
             throw new UnauthorizedAccessException("Yenileme tokenı daha önce kullanılmış; tüm oturumlar kapatıldı.");
         }
@@ -95,6 +104,7 @@ public class AuthService(AppDbContext db, IConfiguration config)
 
         k.SifreHash = Hashle(yeniSifre!, out var tuz);
         k.SifreTuz = tuz;
+        Denetim.Ekle(db, k.KullaniciAdi, k.Rol, "SifreDegisti", "Kullanici", k.Id);
         await db.SaveChangesAsync();
         await TumOturumlariKapatAsync(k.Id);
     }

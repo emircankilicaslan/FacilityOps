@@ -1,0 +1,22 @@
+# Tek komutla çalıştırma:  docker compose up --build
+# Arayüz ve Swagger: http://localhost:8080  ·  http://localhost:8080/swagger
+# JWT_KEY yoksa aşağıdaki yerel deneme anahtarı kullanılır; gerçek ortamda .env ile en az 32 karakterlik gizli bir değer verin.
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      Jwt__Key: ${JWT_KEY:-yerel-deneme-anahtari-gercek-ortamda-degistirin-0123456789}
+      Jwt__Issuer: FacilityOps
+      Jwt__Audience: FacilityOps.Istemci
+    volumes:
+      - facilityops-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /saglik HTTP/1.0\r\n\r\n\" >&3 && grep -q \" 200 \" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  facilityops-data:
