@@ -140,6 +140,17 @@ public class ArizaService(AppDbContext db)
         return [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(sb.ToString())];
     }
 
+    /// <summary>Filtreye uyan arızaları Excel (.xlsx) olarak üretir (en fazla 10.000 satır); metin hücreleri formül olarak çalışmaz.</summary>
+    public async Task<byte[]> XlsxAsync(ArizaDurumu? durum, Oncelik? oncelik, bool? gecikmis)
+    {
+        var liste = await Filtrele(durum, oncelik, gecikmis).Include(a => a.Istasyon)
+            .OrderBy(a => a.Id).Take(10_000).ToListAsync();
+        return Xlsx.Olustur("Arızalar",
+            ["Id", "İstasyon", "Başlık", "Öncelik", "Durum", "Atanan kişi", "Oluşturma (UTC)", "SLA son tarih (UTC)", "Gecikmiş"],
+            liste.Select(a => (IReadOnlyList<object?>)
+                [a.Id, a.Istasyon?.Ad, a.Baslik, a.Oncelik.ToString(), a.Durum.ToString(), a.AtananKisi, a.OlusturmaZamani, a.SlaSonTarih, a.Gecikmis]));
+    }
+
     /// <summary>CSV alanını kaçışlar; =, +, -, @ ile başlayan değerlere ' ekleyerek formül enjeksiyonunu önler.</summary>
     public static string Csv(string? deger)
     {

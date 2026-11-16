@@ -100,6 +100,52 @@ namespace FacilityOps.Api.Data.Migrations
                     b.ToTable("Arizalar");
                 });
 
+            modelBuilder.Entity("FacilityOps.Api.Domain.DenetimKaydi", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Ayrinti")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Islem")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kullanici")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Rol")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VarlikId")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VarlikTuru")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Zaman")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Islem");
+
+                    b.HasIndex("Kullanici");
+
+                    b.HasIndex("Zaman");
+
+                    b.ToTable("DenetimKayitlari");
+                });
+
             modelBuilder.Entity("FacilityOps.Api.Domain.Istasyon", b =>
                 {
                     b.Property<int>("Id")

@@ -125,3 +125,32 @@ public record TokenCifti(string Token, string YenilemeTokeni, DateTime TokenSonK
 public record IstasyonOlustur(string Ad, string Sehir);
 public record ArizaOlustur(int IstasyonId, string Baslik, string? Aciklama, Oncelik Oncelik);
 public record ArizaAta(string Kisi);
+
+/// <summary>
+/// Genel denetim kaydı: kim, ne zaman, hangi kaydı değiştirdi (giriş, kullanıcı yönetimi, istasyon ekleme vb.).
+/// Arıza işlemleri ayrıca <see cref="ArizaGecmisi"/> içinde durum geçişleriyle tutulur. Parola ve token kayda girmez.
+/// </summary>
+public class DenetimKaydi
+{
+    public int Id { get; set; }
+    public DateTime Zaman { get; set; } = DateTime.UtcNow;
+
+    /// <summary>İşlemi yapan kullanıcı adı (başarısız girişte denenen ad).</summary>
+    [MaxLength(50)]
+    public string Kullanici { get; set; } = "";
+
+    [MaxLength(20)]
+    public string? Rol { get; set; }
+
+    [MaxLength(40)]
+    public string Islem { get; set; } = "";
+
+    [MaxLength(20)]
+    public string? VarlikTuru { get; set; }
+
+    [MaxLength(40)]
+    public string? VarlikId { get; set; }
+
+    [MaxLength(500)]
+    public string? Ayrinti { get; set; }
+}
