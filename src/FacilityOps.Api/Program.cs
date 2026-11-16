@@ -13,8 +13,24 @@ using FacilityOps.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=facilityops.db"));
+// Veritabanı sağlayıcısı: Sqlite (varsayılan; geliştirme ve testler) veya SqlServer (üretim önerisi).
+// Her sağlayıcının migration kümesi ayrıdır (bkz. SqlServerDbContext); servisler her iki durumda AppDbContext kullanır.
+var saglayici = builder.Configuration.GetValue("Database:Provider", "Sqlite");
+var baglanti = builder.Configuration.GetConnectionString("Default");
+if (string.Equals(saglayici, "SqlServer", StringComparison.OrdinalIgnoreCase))
+{
+    if (string.IsNullOrWhiteSpace(baglanti))
+        throw new InvalidOperationException("Database:Provider=SqlServer iken ConnectionStrings:Default ayarlanmalı. Ortam değişkeni: ConnectionStrings__Default");
+    builder.Services.AddDbContext<AppDbContext, SqlServerDbContext>(o => o.UseSqlServer(baglanti));
+}
+else if (string.Equals(saglayici, "Sqlite", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlite(baglanti ?? "Data Source=facilityops.db"));
+}
+else
+{
+    throw new InvalidOperationException($"Bilinmeyen Database:Provider değeri: '{saglayici}' (Sqlite veya SqlServer olmalı).");
+}
 builder.Services.AddScoped<ArizaService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<KullaniciService>();
@@ -104,6 +120,8 @@ app.Use(async (ctx, next) =>
     catch (UnauthorizedAccessException e) { await Hata(ctx, 401, "Yetkisiz", e.Message); }
     catch (ArgumentException e) { await Hata(ctx, 400, "Geçersiz istek", e.Message); }
     catch (InvalidOperationException e) { await Hata(ctx, 409, "Çakışma", e.Message); }
+    // Gövde okunamadı/bozuk JSON (ör. geçersiz enum değeri): istemci hatasıdır, 500 değil 400 dönülür; ayrıntı sızdırılmaz.
+    catch (BadHttpRequestException e) { await Hata(ctx, e.StatusCode, "Geçersiz istek", "İstek gövdesi okunamadı veya geçersiz."); }
     catch (Exception e)
     {
         ctx.RequestServices.GetRequiredService<ILogger<Program>>().LogError(e, "Beklenmeyen hata: {Yol}", ctx.Request.Path);
