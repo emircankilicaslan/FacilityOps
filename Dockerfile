@@ -7,7 +7,7 @@ RUN dotnet restore
 COPY . .
 RUN dotnet publish src/FacilityOps.Api -c Release -o /app --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:11.0
 WORKDIR /app
 COPY --from=build /app .
 RUN mkdir /data && chown $APP_UID /data
