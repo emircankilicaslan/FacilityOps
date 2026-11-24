@@ -189,6 +189,8 @@ dotnet test
 Ayrıca sağlayıcı ayarının doğrulanması ve bozuk istek gövdesinin (ör. metin olarak gönderilen enum) 500 yerine 400 ile reddedilmesi test edilir.
 GitHub Actions (`.github/workflows/ci.yml`) her push ve pull request'te bir SQL Server servisiyle derleme (uyarılar hata sayılır) ve tüm testleri çalıştırır.
 
+**Kapsam:** CI, `coverlet` ile satır kapsamını ölçer (EF Core migration dosyaları üretilmiş kod olduğu için `coverlet.runsettings` ile hariç tutulur). Özet iş akışı sayfasında görünür, Cobertura raporu `kapsam-raporu` artifact olarak indirilebilir ve oran %80 altına düşerse iş akışı başarısız olur. Yerelde: `dotnet test --settings coverlet.runsettings --collect:"XPlat Code Coverage"`.
+
 ## Sonraki adımlar
 PostgreSQL desteği (SQL Server ve SQLite var), erişim tokenının anlık iptali (şu an en fazla 15 dk geçerli kalır). SQLite'tan SQL Server'a veri taşıma aracı yoktur: SQLite yalnızca geliştirme içindir, mevcut bir SQLite veritabanı SQL Server'a otomatik aktarılmaz.
 
